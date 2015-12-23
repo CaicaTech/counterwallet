@@ -25,6 +25,17 @@ exports.run = function( params ){
 		win.close();
 	});
 	
+	
+	var back_home_responsive = Ti.UI.createView({ backgroundColor:'transparent', width: '30%', height: '70%', top : 5, left: 0 });
+		top_bar.add( back_home_responsive );
+	
+		back_home_responsive.addEventListener('touchstart', function(){
+			win.close();
+		});
+		back_home_responsive.addEventListener('click', function(){
+			win.close();
+		});
+	
 	var settings_title_center = _requires['util'].makeLabel({
 		text:L('label_asset_info'),
 		color:"white",
@@ -90,7 +101,7 @@ exports.run = function( params ){
 					return box;
 				}
 				
-				if( json != null ){
+				if( json != null && json.image != null ){
 					if( !json.image.match(/^https?:\/\//) ) json.image = 'https://' + json.image;
 					var image = Ti.UI.createImageView({
 						image: json.image,
@@ -102,42 +113,36 @@ exports.run = function( params ){
 				}
 				
 				var box_asset = createFieldBox();
-				box_asset.title.text = 'Token Name';
+				box_asset.title.text = L('label_info_tokenname');
 				box_asset.field.value = result.asset;
 				box_asset.top = 10;
 				
 				var box_owner = createFieldBox();
-				box_owner.title.text = 'Owned By';
+				box_owner.title.text = L('label_info_ownedby');
 				box_owner.field.value = result.issuer;
 				box_owner.top = 10;
 				
 				var box_description = createFieldBox();
-				box_description.title.text = 'Description';
+				box_description.title.text = L('label_info_description');
 				box_description.field.value = result.description;
 				box_description.top = 10;
 				
 				if( json != null ){
 					if( json.website != null ){
 						var box_website = createFieldBox();
-						box_website.title.text = 'Web';
+						box_website.title.text = L('label_info_web');
 						box_website.field.value = json.website;
 						box_website.top = 10;
-					}
-					if( json.pgpsig != null ){
-						var box_pgpsig = createFieldBox();
-						box_pgpsig.title.text = 'pgpsig';
-						box_pgpsig.field.value = json.pgpsig;
-						box_pgpsig.top = 10;
 					}
 				}
 				
 				var box_supply = createFieldBox();
-				box_supply.title.text = 'Total Issued';
+				box_supply.title.text = L('label_info_toalissued');
 				box_supply.field.value = result.supply;
 				box_supply.top = 10;
 				
 				var box_divisible = createBox();
-				box_divisible.title.text = 'Divisible';
+				box_divisible.title.text = L('label_info_divisible');
 				box_divisible.top = 10;
 				var is_divisible = _requires['util'].createSlider({
 					'init': result.divisible,
@@ -147,7 +152,7 @@ exports.run = function( params ){
 				is_divisible.editable = false;
 				
 				var box_locked = createBox();
-				box_locked.title.text = 'Lock';
+				box_locked.title.text = L('label_lock');
 				box_locked.top = 10;
 				var is_locked = _requires['util'].createSlider({
 					'init': result.locked,
@@ -185,7 +190,8 @@ exports.run = function( params ){
 			alert(L('text_assetinfo_error'));
 		}
 	});
-	Ti.API.home_tab.open(win.origin,{animated:true});
+	if(OS_IOS) Ti.API.home_tab.open(win.origin,{ animated:true });
+	if(OS_ANDROID) win.origin.open({ animated:true });
 	
 	return win.origin;
 };

@@ -44025,70 +44025,103 @@ module.exports={
 		xhr.send();
 	};
 	
-	bitcore.signrawtransaction = function(raw_tx, privkey, callback, fail){
+	bitcore.signrawtransaction = function(raw_tx, privkey, params){
 		var _requires = globals.requires;
 		var address = privkey.toAddress().toString();
 		
-		//Ti.API.info('raw_tx='+raw_tx);
 		_requires['network'].connect({
 			'method': 'decoderawtransaction',
 			'post': {
 				id: _requires['cache'].data.id,
+				address: address,
+				pubkey: params.pubkey,
 				hex: raw_tx
 			},
 			'callback': function( result ){
 				var decoded_tx = result.decoded_tx;
 				var utxos = new Array();
-				for( var i = 0; i < decoded_tx.vin.length; i++ ){
-					var vin = decoded_tx.vin[i];
-					for( var j = 0; j < result.utxos.length; j++ ){
-						if( vin.txid === result.utxos[j].txid && vin.vout == result.utxos[j].vout ) utxos = utxos.concat( result.utxos.splice(j, 1) );
-					}
-				}
-				var tx = new bitcore.Transaction().from(utxos);
 				
-				tx.version = decoded_tx.version;
-				tx.nLockTime = decoded_tx.locktime;
-				
-				for(var i = 0; i < decoded_tx.vout.length; i++){
-					var vout = decoded_tx.vout[i];
-					
-					var type = vout.scriptPubKey.type;
-					var value = parseInt(Number(vout.value) * 1e8);
-					var addresses = vout.scriptPubKey.addresses;
-					var hex = vout.scriptPubKey.hex;
-					
-					if( type === 'pubkeyhash' ){
-						tx.addOutput(new bitcore.Transaction().createOutput({satoshis: value, script: new bitcore.Script.buildPublicKeyHashOut(addresses[0])}));
-					}
-					else if( type === 'multisig' ){
-						var asm = vout.scriptPubKey.asm.split(' ');
-						
-						var pubkeys = new Array();
-						for( var j = 1; j < asm.length; j++ ){
-							if( bitcore.PublicKey.isValid(asm[j]) ){
-								pubkeys.push(new bitcore.PublicKey(asm[j]));
+				try{
+					for( var i = 0; i < decoded_tx.vin.length; i++ ){
+						var vin = decoded_tx.vin[i];
+						for( var j = 0; j < result.utxos.length; j++ ){
+							if( vin.txid === result.utxos[j].txid && vin.vout == result.utxos[j].vout ){
+								utxos = utxos.concat( result.utxos.splice(j, 1) );
+								continue;
 							}
 						}
+					}
+					var tx = new bitcore.Transaction().from(utxos);
+					
+					tx.version = decoded_tx.version;
+					tx.nLockTime = decoded_tx.locktime;
+					
+					var ischeck_address = null, ischeck_destination = null;
+					if( params.address != null ) ischeck_address = true;
+					if( params.destination != null ) ischeck_destination = true;
+					
+					for(var i = 0; i < decoded_tx.vout.length; i++){
+						var vout = decoded_tx.vout[i];
+						var type = vout.scriptPubKey.type;
 						
-						var s = new bitcore.Script.buildMultisigOut(pubkeys, parseInt(asm[0]), {noSorting: true});
-						tx.addOutput(new bitcore.Transaction().createOutput({satoshis: value, script: s }));
+						if( type === 'pubkeyhash' ){
+							var address = vout.scriptPubKey.addresses[0];
+							if( ischeck_address != null && address !== params.address ){
+								if( ischeck_destination != null ){
+									if( address !== params.destination ) ischeck_address = false;
+								}
+								else ischeck_address = false;
+							}
+						}
 					}
-					else{
-						var asm = vout.scriptPubKey.asm.split(' ');
-						tx.addData(new Buffer(asm[1], 'hex'));
+					
+					if( ischeck_address != null && !ischeck_address ) throw new Error('Invalid address error');
+					if( ischeck_destination != null && !ischeck_destination ) throw new Error('Invalid destination error');
+					
+					for(var i = 0; i < decoded_tx.vout.length; i++){
+						var vout = decoded_tx.vout[i];
+						
+						var type = vout.scriptPubKey.type;
+						var value = parseInt(Number(vout.value) * 1e8);
+						var addresses = vout.scriptPubKey.addresses;
+						var hex = vout.scriptPubKey.hex;
+						
+						if( type === 'pubkeyhash' ){
+							tx.addOutput(new bitcore.Transaction().createOutput({satoshis: value, script: new bitcore.Script.buildPublicKeyHashOut(addresses[0])}));
+						}
+						else if( type === 'multisig' ){
+							var asm = vout.scriptPubKey.asm.split(' ');
+							
+							var pubkeys = new Array();
+							for( var j = 1; j < asm.length; j++ ){
+								if( bitcore.PublicKey.isValid(asm[j]) ){
+									pubkeys.push(new bitcore.PublicKey(asm[j]));
+								}
+							}
+							
+							var s = new bitcore.Script.buildMultisigOut(pubkeys, parseInt(asm[0]), {noSorting: true});
+							tx.addOutput(new bitcore.Transaction().createOutput({satoshis: value, script: s }));
+						}
+						else{
+							var asm = vout.scriptPubKey.asm.split(' ');
+							tx.addData(new Buffer(asm[1], 'hex'));
+						}
+					}
+					tx.sign(privkey);
+					if( params.callback != null ){
+						try{
+							var serialized = tx.serialize();
+							params.callback(serialized);
+						}
+						catch(e2){
+							if( params.fail != null ) params.fail();
+						}
 					}
 				}
-				tx.sign(privkey);
-				if( callback != null ){
-					try{
-						var serialized = tx.serialize();
-						callback(serialized);
-					}
-					catch(e){
-						if( fail != null ) fail();
-					}
+				catch(e){
+					params.fail();
 				}
+				
 			},
 			'onError': function(error){
 				alert(error);

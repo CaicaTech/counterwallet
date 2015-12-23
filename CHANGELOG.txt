@@ -1,3 +1,12 @@
+#ver0.9.0(2016.4.19)
+Generate and manage multiple addresses on IndieSquare Wallet.
+Several UI improvements making IndieSquare Wallet even more convenient and intuitive.
+
+Updates
+- Multiple address capability
+- UI/UX improvements
+- Other bug fixes and improvements
+
 #ver0.8.4
 Minor update.
 -----

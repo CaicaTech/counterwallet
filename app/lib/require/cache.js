@@ -36,8 +36,14 @@ module.exports = (function() {
 		else{
 			var rsa_info = self.load_rsa();
 			var RSAkey = (globals.Crypt_key == null)? (globals.Crypt_key = crypt.loadRSAkey(rsa_info.a)): globals.Crypt_key;
-			var DecryptionResult = crypt.decrypt(data.toString(), RSAkey);
-			data = DecryptionResult.plaintext;
+			try{
+				var DecryptionResult = crypt.decrypt(data.toString(), RSAkey);
+				data = DecryptionResult.plaintext;
+			}
+			catch(e){
+				Ti.API.info(e);
+				throw new Error('*** Access deny.');
+			}
 		}
 		return JSON.parse(data);
 	}
@@ -50,6 +56,11 @@ module.exports = (function() {
 	    
 	    var f2 = Ti.Filesystem.getFile( getRSAPath() );
 	    f2.write('');
+	    
+	    var f3 = Ti.Filesystem.getFile(Ti.Filesystem.applicationDataDirectory, 'qr_address.png');
+		if( f3.exists() ) f3.deleteFile();
+		
+		Ti.App.Properties.setString('current_address', null);
 	    
 	    self.load();
 	};
@@ -69,8 +80,14 @@ module.exports = (function() {
 	};
 	
 	self.load = function(){
-		globals.datas = getData();
-		self.data = globals.datas;
+		try{
+			globals.datas = getData();
+			self.data = globals.datas;
+			return true;
+		}
+		catch(e){
+			return false;
+		}
 	};
 	
 	self.save = function(){

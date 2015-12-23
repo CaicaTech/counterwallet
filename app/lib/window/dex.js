@@ -1,13 +1,9 @@
-var theWindow = Ti.UI.createWindow({
-	title : L('label_tab_exchange'),
-	backgroundColor : '#e5e5e5',
-	orientationModes : [Ti.UI.PORTRAIT],
-	navBarHidden : true
-});
-if (OS_IOS) theWindow.statusBarStyle = Ti.UI.iPhone.StatusBar.LIGHT_CONTENT;
-exports.run = function() {
+
 	var _windows = globals.windows;
 	var _requires = globals.requires;
+	
+	
+	var view_dex = Ti.UI.createView({ backgroundColor:'#FFFFFF', width: Ti.UI.FILL, height: Ti.UI.FILL });
 
 	var popular_tokens = [
 		{ asset: 'LTBCOIN' },
@@ -16,19 +12,13 @@ exports.run = function() {
 		{ asset: 'SJCX' },
 		{ asset: 'BITCRYSTALS' }
 	];
-	search_tokens = [];
 	
-	if( globals.balances != null ) load();
-	else{
-		var loading = _requires['util'].showLoading(theWindow, { width: Ti.UI.FILL, height: Ti.UI.FILL, message: L('loading_waiting_first')});
-		var timer = setInterval(function(){
-			if( globals.balances != null ){
-				if( loading != null ) loading.removeSelf();
-				clearInterval(timer);
-				load();
-			}
-		}, 500);
+	var tokenHistory = Ti.App.Properties.getList('tokenHistory');		
+	if(tokenHistory){
+		popular_tokens = popular_tokens.concat(tokenHistory);
 	}
+	
+	search_tokens = [];
 	
 	function addSearchTokens(){
 		search_tokens = [];
@@ -99,10 +89,18 @@ exports.run = function() {
 	  	 contentWidth:0, 
 	  	 contentHeight:'auto', 
 	  	 top:0,
+	  	 height: _requires['util'].getDisplayHeight(),
 	  	 showVerticalScrollIndicator:true, 
 	  	 showHorizontalScrollIndicator:true 
 		});
-		theWindow.add(view);
+		
+		if (OS_ANDROID) {
+			view.height = _requires['util'].getDisplayHeight() - 60;
+		}
+		else{
+			view.height = _requires['util'].getDisplayHeight() - 50;
+		}
+		view_dex.add(view);
 	
 		var top_bar = Ti.UI.createView({
 			backgroundColor : '#e54353',
@@ -110,7 +108,14 @@ exports.run = function() {
 			height : (OS_ANDROID)? 137: 155
 		});
 		top_bar.top = 0;
-		view.add(top_bar);
+		view_dex.add(top_bar);
+		
+		function checkTiker(){
+			_requires['tiker'].getTiker({
+				'callback' : function(){}
+			});
+		}
+		checkTiker();
 		
 		var orders1 = _requires['util'].createTableList({
 			backgroundColor : 'white',
@@ -121,6 +126,7 @@ exports.run = function() {
 			rowHeight : '33.3%'
 		});
 		orders1.addEventListener('click', selectRow1);
+		
 		
 		var orders2 = _requires['util'].createTableList({
 			backgroundColor : 'white',
@@ -137,7 +143,7 @@ exports.run = function() {
 			width : '100%', height : '20%',
 			scrollable :false,
 			top : 0,
-			rowHeight : '33.3%'
+			rowHeight : '32.3%'
 		});
 		histories.addEventListener('click', selectRowClosed);
 		
@@ -189,13 +195,13 @@ exports.run = function() {
 		function put_box1(asset_name){
 			if( asset_name === L('label_exchange_select_token') ){
 				var box1_asset_name = _requires['util'].makeLabel({
-				text : asset_name,
-				color : 'black',
-				minimumFontSize : 10,
-				font : { fontFamily : 'Helvetica Neue', fontSize : 15, fontWeight : 'normal' },
-				textAlign:'center',
-				width:'100%'
-			});
+					text : asset_name,
+					color : 'black',
+					minimumFontSize : 10,
+					font : { fontFamily : 'Helvetica Neue', fontSize : (OS_ANDROID)? 12: 15, fontWeight : 'normal' },
+					textAlign:'center',
+					width:'100%'
+				});
 			
 			}else{
 				if( asset_name.length > 12 ){
@@ -207,15 +213,55 @@ exports.run = function() {
 					left: 38,
 					width: '70%', top: 5,
 					minimumFontSize : 10,
-					font : { fontFamily: 'Helvetica Neue', fontSize: 15, fontWeight: 'normal' },
+					font : { fontFamily: 'Helvetica Neue', fontSize: (OS_ANDROID)? 12: 15, fontWeight: 'normal' },
 					textAlign: 'center'
 				});
 			}
 			box1.add(box1_asset_name);
+			box1.addEventListener('touchstart', function() {
+				picker1.animate(slide_in);
+				search_tokens = [ {asset: L('label_exchange_getting_tokens') }];
+				
+				setTimeout(function() { addBuySellTokens(); }, 500);
+			});
 			
 		}
 		
+		var responsiveView = Ti.UI.createButton({
+			backgroundColor : "transparent",
+	        width : '40%',
+	        height : '40%',
+	        color: 'white',
+	        right: 10,
+	        top:10,
+	        left:10,
+	        font:{fontFamily:'Helvetica Neue', fontSize:20, fontWeight:'normal'},
+		});
+		responsiveView.addEventListener('click', function() {
+			search_tokens = [ {asset: L('label_exchange_getting_tokens') }];
+				if( OS_ANDROID ){
+					if(picker1.top == display_height){
+						picker1.animate(slide_in);
+						search_tokens = [ {asset: L('label_exchange_getting_tokens') }];
+						setTimeout(function() { addBuySellTokens(); }, 500);
+					}
+				}
+				else{
+					if(picker1.bottom == -340){
+						picker1.animate(slide_in);
+						search_tokens = [ {asset: L('label_exchange_getting_tokens') }];
+						setTimeout(function() { addBuySellTokens(); }, 500);
+					}
+				}
+			addBuySellTokens(false);
+				
+			});
+		top_bar.add(responsiveView);
 		put_box1(L('label_exchange_select_token'));
+		
+		
+	//	addBuySellTokens();
+		
 		
 		function getXCPBalance(){
 			for( var i = 0; i < globals.balances.length; i++ ){
@@ -227,14 +273,14 @@ exports.run = function() {
 		}
 		
 		function trim( quantity ){
-			if(quantity > 1) quantity = quantity.toFixed(2);
-			else quantity = quantity.toFixed(8);
+			if(quantity >= 1) quantity = quantity.toFixed(2);
+			else quantity = quantity.toFixed(6);
 			return quantity;
 		}
 		
 		function trim2( quantity ){
-			if(quantity > 1) quantity = quantity.toFixed2(2);
-			else quantity = quantity.toFixed2(8);
+			if(quantity >= 1) quantity = quantity.toFixed2(2);
+			else quantity = quantity.toFixed2(6);
 			return quantity;
 		}
 		
@@ -337,12 +383,10 @@ exports.run = function() {
 			
 			var foundToken = false;
 			for( var i = 0; i < globals.balances.length; i++ ){
-				if(globals.balances[i].asset === selected_asset){
-					foundToken = true;
-				}
+				if(globals.balances[i].asset === selected_asset) foundToken = true;
 			}	
 			
-			if(foundToken == false){
+			if( foundToken == false ){
 				selected_asset = '';
 				token_balance.text = '';
 				box1.removeAllChildren();
@@ -371,6 +415,7 @@ exports.run = function() {
 		});
 		
 		buyButton.addEventListener('click', function(e) {
+			
 			buySellType = 'buy';
 			spend_asset = 'XCP';
 			if(selected_asset.length > 0){
@@ -405,7 +450,7 @@ exports.run = function() {
 		var instructions_1 = _requires['util'].makeLabel({
 			text : L('label_exchange_instructions1'),
 			color : 'white',
-			top: 70,
+			top: 60,
 			height: 75,
 			font : { fontFamily : 'Helvetica Neue', fontSize : 15, fontWeight : 'normal' },
 			textAlign:'center',
@@ -556,9 +601,11 @@ exports.run = function() {
 		});
 		
 		amount_dex_field.addEventListener('focus', function() {
+			
 	        amount_dex_field_focus = true;
 	    });
 	     amount_dex_field.addEventListener('blur', function() {
+	     	
 	        amount_dex_field_focus = false;
 	    });
 		amount_dex_field.addEventListener('change', function(e) {
@@ -588,7 +635,7 @@ exports.run = function() {
 								var price_token =  (price_dex_field.value / fiat_val);
 								var total_token = price_token * parseFloat(e.value);
 								
-								if(price_token > 1){
+								if(price_token >= 1){
 									price_token = price_token.toFixed(3);
 								}
 								else if(price_token > 0.1){
@@ -598,7 +645,7 @@ exports.run = function() {
 									price_token = price_token.toFixed(6);
 								}
 								
-								if(total_token > 1){
+								if(total_token >= 1){
 									total_token = total_token.toFixed(3);
 								}
 								else if(total_token > 0.1){
@@ -617,9 +664,11 @@ exports.run = function() {
 			}
 		});
 		 price_dex_field.addEventListener('focus', function() {
+		 
 	        price_dex_field_focus = true;
 	    });
 	     price_dex_field.addEventListener('blur', function() {
+	     	
 	        price_dex_field_focus = false;
 	    });
 	    function updatePrice(){
@@ -646,7 +695,7 @@ exports.run = function() {
 							
 							
 							var price_token =  ( price_dex_field.value / fiat_val);
-							if(price_token > 1){
+							if(price_token >= 1){
 								price_token = price_token.toFixed(3);
 							}
 							else if(price_token > 0.1){
@@ -658,7 +707,7 @@ exports.run = function() {
 							
 							
 							var total_token =  (total_dex_field.value / fiat_val);
-							if(total_token > 1){
+							if(total_token >= 1){
 								total_token = total_token.toFixed(3);
 							}
 							else if(total_token > 0.1){
@@ -681,9 +730,11 @@ exports.run = function() {
 			}
 		});
 		total_dex_field.addEventListener('focus', function() {
+				
 	        total_dex_field_focus = true;
 	    });
 	    total_dex_field.addEventListener('blur', function() {
+	    	
 	        total_dex_field_focus = false;
 	    });
 		total_dex_field.addEventListener('change', function(e) {
@@ -696,7 +747,7 @@ exports.run = function() {
 						var price_val = (parseFloat(e.value) / parseFloat(amount_dex_field.value));
 						price_val = parseFloat(price_val);
 					    
-					    if(price_val > 1){
+					    if(price_val >= 1){
 							price_val = price_val.toFixed(3);
 						}
 						else if(price_val > 0.1){
@@ -722,7 +773,7 @@ exports.run = function() {
 							fiat_val = fiat_val.replace(symbol,'');
 							fiat_val = fiat_val.replace(',','');
 							var total_token =  (total_dex_field.value / fiat_val);
-							if(total_token > 1){
+							if(total_token >= 1){
 								total_token = total_token.toFixed(3);
 							}
 							else if(total_token > 0.1){
@@ -735,7 +786,7 @@ exports.run = function() {
 						    price_dex_field.value = (parseFloat(e.value) / parseFloat(amount_dex_field.value));
 							
 							var price_token =  (price_dex_field.value / fiat_val);
-							if(price_token > 1){
+							if(price_token >= 1){
 								price_token = price_token.toFixed(3);
 							}
 							else if(price_token > 0.1){
@@ -754,11 +805,11 @@ exports.run = function() {
 		var slide_in; 
 		var slide_out;
 		if( OS_ANDROID ){
-			slide_in = Ti.UI.createAnimation({top: display_height - 400, duration:200});
+			slide_in = Ti.UI.createAnimation({top: display_height - 460, duration:200});
 			slide_out = Ti.UI.createAnimation({top: display_height, duration:200});
 		}
 		else {
-			slide_in = Ti.UI.createAnimation({bottom: 0, duration:200});
+			slide_in = Ti.UI.createAnimation({bottom: 50, duration:200});
 			slide_out = Ti.UI.createAnimation({bottom: -340, duration:200});
 		}
 		
@@ -803,10 +854,17 @@ exports.run = function() {
 		picker_toolbar.add(close);
 		
 		var searchText = ' ';
-	
+		
 		searchField.addEventListener('change', function(e) {
 			searchText = e.value;
+			
+			if(e.value.length == 0){
+				search_tokens = popular_tokens;
+				addBuySellTokens();
+			}
+			
 		});
+		
 		close.addEventListener('click',function() {
 			searchField.blur();
 			picker1.animate(slide_out);
@@ -871,43 +929,49 @@ exports.run = function() {
 		labels2.backgroundColor = '#ececec';
 		labels2.width = '100%';
 		labels2.height = 15;
-		
-		function addBuySellTokens() {
-			buySellTokens.setRowDesign(search_tokens, function(row, val) {
-				if (val.asset != L('label_exchange_getting_tokens') && val.asset != L('label_exchange_search_limit')) {
-					var nameLeft = 5;
-					if (search_tokens.length < 50) {
-						nameLeft = 55;
-						
-						_requires['util'].putTokenIcon({
-							info: val, parent: row,
-							width: 40, height: 40,
-							left: 5
-						});
+		var addingTokens = false;
+		var addBuySellTokens = function( isaddsearch ){
+			if( isaddsearch == null || isaddsearch ) addSearchTokens();
+			if( addingTokens == false ){
+				addingTokens = true;
+				buySellTokens.setRowDesign(search_tokens, function(row, val) {
+					if (val.asset != L('label_exchange_getting_tokens') && val.asset != L('label_exchange_search_limit')) {
+						var nameLeft = 5;
+						if (search_tokens.length < 50) {
+							nameLeft = 55;
+							
+							_requires['util'].putTokenIcon({
+								info: val, parent: row,
+								width: 40, height: 40,
+								left: 5
+							});
+						}
 					}
-				}
-				var label = Ti.UI.createLabel({
-					text : val.asset,
-					font : {
-						fontFamily : 'HelveticaNeue-Light',
-						fontSize : 20,
-						fontWeight : 'normal'
-					},
-					color : 'black',
-					width : 'auto',
-					height : 'auto',
-					left : nameLeft
+					var label = Ti.UI.createLabel({
+						text : val.asset,
+						font : {
+							fontFamily : 'HelveticaNeue-Light',
+							fontSize : 20,
+							fontWeight : 'normal'
+						},
+						color : 'black',
+						width : 'auto',
+						height : 'auto',
+						left : nameLeft
+					});
+					row.add(label);
+					return row;
 				});
-				row.add(label);
-				return row;
-			});
+				addingTokens = false;
+			}
 		};
-		//addBuySellTokens();
+		
 		buySellTokens.addEventListener('click', selectToken);
 	
-		box1_range.addEventListener('click', function() {
-			addBuySellTokens();
+		box1_range.addEventListener('touchstart', function() {
 			picker1.animate(slide_in);
+			search_tokens = [ {asset: L('label_exchange_getting_tokens') }];
+			setTimeout(function() { addBuySellTokens(); }, 500);
 		});
 		
 		search.addEventListener('click', function(){
@@ -916,11 +980,11 @@ exports.run = function() {
 			if (searchText.length > 0) {
 				if (searchText.length < 3) {
 					search_tokens = [ {asset: L('label_exchange_search_limit') }];
-					addBuySellTokens();
+					addBuySellTokens(false);
 					return;
 				}
 				search_tokens = [ {asset: L('label_exchange_getting_tokens') }];
-				addBuySellTokens();
+				addBuySellTokens(false);
 				_requires['network'].connect({
 					'method' : 'search_assets',
 					'post' : {
@@ -928,7 +992,7 @@ exports.run = function() {
 					},
 					'callback' : function(result) {
 						search_tokens = result;
-						addBuySellTokens();
+						addBuySellTokens(false);
 					},
 					'onError' : function(error) {
 						alert(error);
@@ -951,6 +1015,37 @@ exports.run = function() {
 			if( selected_asset !== '' && token_balance.text === '' ) token_balance.text = '(0)';
 		}
 		function selectToken(e) {
+			
+			
+			var canAddToken = true;
+			for( var i = 0; i < popular_tokens.length; i++ ){
+				if(popular_tokens[i].asset === search_tokens[e.index].asset){
+					canAddToken = false;
+				}
+			}
+			if(canAddToken == true){
+				var tokenHistory = Ti.App.Properties.getList('tokenHistory');
+				if(tokenHistory){
+					
+					var canAddToken2 = true;
+					for( var i = 0; i < tokenHistory.length; i++ ){
+						if(tokenHistory[i].asset === search_tokens[e.index].asset){
+							canAddToken2 = false;
+						}
+					}
+					if(canAddToken2 == true){
+						tokenHistory.push(search_tokens[e.index]);
+					}
+					
+					if(tokenHistory.length > 5){
+						tokenHistory.shift();
+					}
+				}else{
+					tokenHistory = [];
+					tokenHistory.push(search_tokens[e.index]);
+				}
+				popular_tokens = popular_tokens.concat(search_tokens[e.index]);
+			}
 			
 			var selectedVal = search_tokens[e.index].asset;
 			selected_asset = selectedVal;
@@ -1067,10 +1162,10 @@ exports.run = function() {
 					var dialog = _requires['util'].createDialog({
 		   			title:L('exchange_how_to_orders_title_sell').format({'asset':buy_asset}),
 					message:L('exchange_how_to_no_orders_sell').format({'asset':buy_asset}),
-					buttonNames: ['OK',L('text_dont_show')]
+					buttonNames: [L('text_dont_show'),'OK']
 					});
 					dialog.addEventListener('click', function(e){
-					if( e.index == 1 ){
+					if( e.index == e.source.cancel ){
 						Ti.App.Properties.setString('shows_order_how', "FALSE");
 					}
 				});
@@ -1089,10 +1184,10 @@ exports.run = function() {
 					var dialog = _requires['util'].createDialog({
 		   			title:L('exchange_how_to_orders_title_buy').format({'asset':spend_asset}),
 					message:L('exchange_how_to_no_orders_sell').format({'asset':spend_asset}),
-					buttonNames: ['OK',L('text_dont_show')]
+					buttonNames: [L('text_dont_show'), 'OK']
 					});
 					dialog.addEventListener('click', function(e){
-					if( e.index == 1 ){
+					if( e.index == e.source.cancel ){
 						Ti.App.Properties.setString('shows_order_how', "FALSE");
 					}
 				});
@@ -1111,12 +1206,12 @@ exports.run = function() {
 					var dialog = _requires['util'].createDialog({
 		   			title:L('exchange_how_to_orders_title_sell').format({'asset':buy_asset}),
 					message:L('exchange_how_to_orders_sell').format({'asset':buy_asset}),
-					buttonNames: [L('how_to_exchange_ok'),L('text_dont_show')]
+					buttonNames: [L('text_dont_show'), L('how_to_exchange_ok')]
 					});
 					dialog.addEventListener('click', function(e){
-					if( e.index == 1 ){
-						Ti.App.Properties.setString('shows_order_how', "FALSE");
-					}
+						if( e.index == e.source.cancel ){
+							Ti.App.Properties.setString('shows_order_how', "FALSE");
+						}
 					});
 					if(orders1Array.length > 0){
 						dialog.show();
@@ -1126,12 +1221,12 @@ exports.run = function() {
 					var dialog = _requires['util'].createDialog({
 		   			title:L('exchange_how_to_orders_title_buy').format({'asset':spend_asset}),
 					message:L('exchange_how_to_orders_buy').format({'asset':spend_asset}),
-					buttonNames: [L('how_to_exchange_ok'),L('text_dont_show')]
+					buttonNames: [L('text_dont_show'), L('how_to_exchange_ok')]
 					});
 					dialog.addEventListener('click', function(e){
-					if( e.index == 1 ){
-						Ti.App.Properties.setString('shows_order_how', "FALSE");
-					}
+						if( e.index != e.source.cancel ){
+							Ti.App.Properties.setString('shows_order_how', "FALSE");
+						}
 					});
 					if(orders2Array.length > 0){
 						dialog.show();
@@ -1212,7 +1307,7 @@ exports.run = function() {
 					'callback' : function(result) {
 						var matches = result;
 						
-						histories.opacity = 0.7;
+						histories.opacity = 1.0;
 						histories.setData([]);
 						if (histories != null) histories.removeAllChildren();
 						if (matches.length == 0) {
@@ -1261,31 +1356,43 @@ exports.run = function() {
 								
 								var typedate = _requires['util'].group({
 									'type': _requires['util'].makeLabel({
+										minimumFontSize:6,
 										text : L('label_' + val.type + '_closed'),
 										right : 0,
 										top:0,
-										color : 'white',
+										color : '#9b9b9b',
 										font : { fontFamily : 'Helvetica Neue', fontSize : 10, fontWeight : 'bold' },
 									}),
 									'date': _requires['util'].makeLabel({
+										minimumFontSize:6,
 										text : val.date,
 										textAlign : 'right',
 										right : 0, bottom: 0,
-										color : 'white',
+										color : '#9b9b9b',
 										font : { fontFamily : 'Helvetica Neue', fontSize : 9, fontWeight : 'normal' }
 									})
 								}, 'vertical');
 								
 								typedate.right = 10;
-								row.backgroundColor = color;
+								//row.backgroundColor = color;
+								var color = '#6db558';
+								if (val.type == 'buy') color = '#e54353';
+								var imageType = '/images/sellAvatar.png';
+								if (val.type == 'buy') imageType = '/images/buyAvatar.png';
+								var avatar_image = _requires['util'].makeImage({
+		   									 image: imageType,
+		    								 height: 27, width:27, left: 5,
+										});		
+										row.add(avatar_image);
 								
 								var order_amount = _requires['util'].group({
 									'amount_order': _requires['util'].makeLabel({
+										minimumFontSize:6,
 										text : trim2( token_amount ),
 										textAlign : 'left',
 										left : 0,
 										top : 0,
-										color : 'white',
+										color : '#9b9b9b',
 										font : {
 											fontFamily : 'Helvetica Neue',
 											fontSize : 10,
@@ -1293,11 +1400,12 @@ exports.run = function() {
 										}
 									}),
 									'amount_token': _requires['util'].makeLabel({
+										minimumFontSize:6,
 										text : main_token,
 										textAlign : 'left',
 										left : 0,
 										top: (OS_ANDROID)? -1: 1,
-										color : 'white',
+										color : '#9b9b9b',
 										font : {
 											fontFamily : 'Helvetica Neue',
 											fontSize : 10,
@@ -1305,29 +1413,36 @@ exports.run = function() {
 										}
 									})
 								}, 'vertical');
-								order_amount.left = 10;
+								order_amount.left = 40;
 								
 								var fiat_order = _requires['util'].makeLabel({
+									minimumFontSize:6,
 									text : _requires['tiker'].to('XCP', val.price, _requires['cache'].data.currncy, 8),
 									textAlign : 'right',
 									top: 15, left: 0,
-									color : 'white',
+									color : color,
 									font : {
 										fontFamily : 'Helvetica Neue',
-										fontSize : 10,
+										fontSize : 11,
 										fontWeight : 'normal'
 									}
 								});
+								var display_heightdex = _requires['util'].getDisplayHeight();
+								if(display_heightdex < 700){
+									fiat_order.top = 12;
+								}
 								
 								var trim_price = trim( val.price );
+								//hist
 								var price_order = _requires['util'].makeLabel({
+									minimumFontSize:6,
 									text : trim_price + ' XCP',
 									textAlign : 'right',
 									top : 0, left: 0,
-									color : 'white',
+									color : color,
 									font : {
 										fontFamily : 'Helvetica Neue',
-										fontSize : 10,
+										fontSize : 11,
 										fontWeight : 'normal'
 									}
 								});
@@ -1469,6 +1584,7 @@ exports.run = function() {
 										
 										var order_amount = _requires['util'].group({
 											'amount_token': _requires['util'].makeLabel({
+												minimumFontSize:6,
 												text : trim2( val.order ),
 												textAlign : 'left',
 												color : '#9b9b9b',
@@ -1480,6 +1596,7 @@ exports.run = function() {
 												}
 											}),
 											'token_tag': _requires['util'].makeLabel({
+												minimumFontSize:6,
 												text : main_token,
 												textAlign : 'left',
 												color : '#9b9b9b',
@@ -1495,25 +1612,29 @@ exports.run = function() {
 										row.add(order_amount);
 										
 										var fiat_price = _requires['util'].makeLabel({
+											minimumFontSize:6,
 											text : _requires['tiker'].to('XCP',  val.price, _requires['cache'].data.currncy, 8),
-											textAlign : 'right',
+											textAlign : 'left',
 											color : color,
-											top: 18, left: 0,
+											width:250,
+											top: 18, left: '42%',
 											font : {
 												fontFamily : 'Helvetica Neue',
-												fontSize : 12,
+												fontSize : 11,
 												fontWeight : 'normal'
 											}
 										});
 										var trim_price = trim( val.price );
 										var price = _requires['util'].makeLabel({
+											minimumFontSize:6,
 											text : trim_price + ' XCP',
-											textAlign : 'right',
+											textAlign : 'left',
+											width:250,
 											color : color,
-											top: 0, left: 0,
+											top: 0, left: '42%',
 											font : {
 												fontFamily : 'Helvetica Neue',
-												fontSize : 15,
+												fontSize : 14,
 												fontWeight : 'normal'
 											}
 										});
@@ -1589,6 +1710,7 @@ exports.run = function() {
 										
 										var order_amount = _requires['util'].group({
 											'amount_token': _requires['util'].makeLabel({
+												minimumFontSize:6,
 												text : trim2( val.order ),
 												textAlign : 'left',
 												color : '#9b9b9b',
@@ -1600,6 +1722,7 @@ exports.run = function() {
 												}
 											}),
 											'token_tag': _requires['util'].makeLabel({
+												minimumFontSize:6,
 												text : main_token,
 												textAlign : 'left',
 												color : '#9b9b9b',
@@ -1615,26 +1738,30 @@ exports.run = function() {
 										row.add(order_amount);
 										
 										var fiat_price = _requires['util'].makeLabel({
+											minimumFontSize:6,
 											text : _requires['tiker'].to('XCP', val.price, _requires['cache'].data.currncy, 8),
-											textAlign : 'right',
+											textAlign : 'left',
 											color : color,
-											top: 18, left: 0,
+											top: 18, left: '42%',
+											width:250,
 											font : {
 												fontFamily : 'Helvetica Neue',
-												fontSize : 12,
+												fontSize : 11,
 												fontWeight : 'normal'
 											}
 										});
 										
 										var trim_price = trim( val.price );
 										var price = _requires['util'].makeLabel({
+											minimumFontSize:6,
 											text : trim_price + ' XCP',
-											textAlign : 'right',
+											textAlign : 'left',
 											color : color,
-											top: 0, left: 0,
+											top: 0, left: '42%',
+											width:250,
 											font : {
 												fontFamily : 'Helvetica Neue',
-												fontSize : 15,
+												fontSize : 14,
 												fontWeight : 'normal'
 											}
 										});
@@ -1859,16 +1986,34 @@ exports.run = function() {
 					closed_lab_fiat3.top = 0;
 				}
 				
-				if (typeof closed_lab_xcp1 !== 'undefined') {
-					closed_lab_xcp1.top = 15;
-				}
-				if (typeof closed_lab_xcp2 !== 'undefined') {
-					closed_lab_xcp2.top = 15;
-				}
 				
-				if (typeof closed_lab_xcp3 !== 'undefined') {
-					closed_lab_xcp3.top = 15;
+				var display_heightdex = _requires['util'].getDisplayHeight();
+				if(display_heightdex < 800){
+					if (typeof closed_lab_xcp1 !== 'undefined') {
+						closed_lab_xcp1.top = 12;
+					}
+					if (typeof closed_lab_xcp2 !== 'undefined') {
+						closed_lab_xcp2.top = 12;
+					}
+				
+					if (typeof closed_lab_xcp3 !== 'undefined') {
+						closed_lab_xcp3.top = 12;
+					}
 				}
+				else{
+					if (typeof closed_lab_xcp1 !== 'undefined') {
+						closed_lab_xcp1.top = 15;
+					}
+					if (typeof closed_lab_xcp2 !== 'undefined') {
+						closed_lab_xcp2.top = 15;
+					}
+				
+					if (typeof closed_lab_xcp3 !== 'undefined') {
+						closed_lab_xcp3.top = 15;
+					}
+				}
+								
+				
 			}
 			else{
 				
@@ -1925,14 +2070,30 @@ exports.run = function() {
 					buy_lab_xcp3.font = { fontSize : 15 };
 				}
 				
-				if (typeof closed_lab_fiat1 !== 'undefined') {
-					closed_lab_fiat1.top = 15;
+				
+				var display_heightdex = _requires['util'].getDisplayHeight();
+				if(display_heightdex < 700){
+					if (typeof closed_lab_fiat1 !== 'undefined') {
+						closed_lab_fiat1.top = 12;
+					}
+					if (typeof closed_lab_fiat2 !== 'undefined') {
+						closed_lab_fiat2.top = 12;
+					}
+					if (typeof closed_lab_fiat3 !== 'undefined') {
+						closed_lab_fiat3.top = 12;
+					}	
 				}
-				if (typeof closed_lab_fiat2 !== 'undefined') {
-					closed_lab_fiat2.top = 15;
-				}
-				if (typeof closed_lab_fiat3 !== 'undefined') {
-					closed_lab_fiat3.top = 15;
+				else{
+					if (typeof closed_lab_fiat1 !== 'undefined') {
+						closed_lab_fiat1.top = 15;
+					}
+					if (typeof closed_lab_fiat2 !== 'undefined') {
+						closed_lab_fiat2.top = 15;
+					}
+					if (typeof closed_lab_fiat3 !== 'undefined') {
+						closed_lab_fiat3.top = 15;
+					}
+					
 				}
 				
 				if (typeof closed_lab_xcp1 !== 'undefined') {
@@ -1971,6 +2132,15 @@ exports.run = function() {
 		hideShowOrders(true);
 		view.add(orders_group);
 		top_bar.add(footer_bar);
+		
+		function resetForm(){
+			price_dex_field_fiat.text = '---';
+			total_dex_field_fiat.text = '---';
+			price_dex_field.value = '';
+			total_dex_field.value = '';
+		
+			amount_dex_field.value = '';
+		}
 		function order(){
 			
 			if(amount_dex_field.value > 0){
@@ -2001,7 +2171,6 @@ exports.run = function() {
 				send_price = price_dex_field_fiat.text.replace(/[^\d.-]/g, '');
 			}
 			
-			Titanium.API.log(send_price);
 			var total_amount = Math.multiply(send_price, send_amount).toFixed2(8);
 			var fiat_val = _requires['tiker'].to('XCP', total_amount, _requires['cache'].data.currncy,8);
 			
@@ -2040,28 +2209,24 @@ exports.run = function() {
 					buttonNames : [L('label_cancel'),L('label_exchange_place_order')]
 				});
 			}
-			
-			
 			dialog.addEventListener('click', function(e) {
-				if( e.index == 1 ) {
+				if( e.index != e.source.cancel ) {
 					_requires['auth'].check({
 						title : L('label_confirmorder'),
 						callback : function(e) {
 							if (e.success) {
-								var loading = _requires['util'].showLoading(theWindow, {
+								var loading = _requires['util'].showLoading(globals.main_window, {
 									width : Ti.UI.FILL,
 									height : Ti.UI.FILL
 								});
 								
 								var main_token = buy_asset;
-				
-								if(buy_asset === 'XCP'){
-									main_token = spend_asset;
-								}
+								if( buy_asset === 'XCP' ) main_token = spend_asset;
 								_requires['network'].connect({
 									'method' : 'create_order',
 									'post' : {
 										id : _requires['cache'].data.id,
+										address: _requires['cache'].data.address,
 										type : buySellType,
 										price_token : 'XCP',
 										price_quantity : total_amount,
@@ -2070,6 +2235,7 @@ exports.run = function() {
 									},
 									'callback' : function(result) {
 										_requires['bitcore'].sign(result.unsigned_hex, {
+											'address': _requires['cache'].data.address,
 											'callback': function(signed_tx) {
 												_requires['network'].connect({
 													'method' : 'sendrawtransaction',
@@ -2077,8 +2243,19 @@ exports.run = function() {
 														tx : signed_tx
 													},
 													'callback' : function(result) {
+														
+														var t = new Date();
+														t.setSeconds(t.getSeconds() + 604800);
+														var day = t.getDate();
+														var monthIndex = t.getMonth() + 1;
+														var year = t.getFullYear();
+
+														var expireDate = day +'/'+ monthIndex +'/'+ year;
+														if( L('language') === 'ja' ) expireDate = year + '/' + monthIndex + '/' + day;
+														
+														resetForm();
 														_requires['util'].createDialog({
-															message : L('exchange_order_placed_message'),
+															message : L('exchange_order_placed_message').format({'expire_date':expireDate}),
 															buttonNames : [L('label_close')]
 														}).show();
 														
@@ -2114,22 +2291,50 @@ exports.run = function() {
 			});
 			dialog.show();
 		}
-		theWindow.add(picker1);
+		view_dex.add(picker1);
 		
-		if( Ti.App.Properties.getString('shows_dex_how3') !== 'FALSE'){
-		    var dialog = _requires['util'].createDialog({
-		   		title:L('exchange_how_to_title'),
-				message:L('exchange_how_to'),
-				buttonNames: [L('how_to_exchange_ok'),L('text_dont_show')]
-			});
-			dialog.addEventListener('click', function(e){
-				if( e.index == 1 ){
-					Ti.App.Properties.setString('shows_dex_how3', "FALSE");
-				}
-			});
-			dialog.show();
+		function init(){
+			selected_asset = '';
+			token_balance.text = '';
+			box1.removeAllChildren();
+			put_box1(L('label_exchange_select_token'));
+			hideShowOrders(true);
+			box1_asset_image.hide();
+			searchField.blur();
+			ordersLoaded = false;
+			
+			addBuySellTokens();
 		}
-		Ti.API.dexLoad = 'YES';
+		globals.dex_init = init;
 	}
-};
-Ti.API.exchange_win = theWindow;
+	
+	function startDex(){
+		if(Ti.API.dexLoad != 'YES'){
+			if( globals.balances != null ) load();
+			else{
+				var loading = _requires['util'].showLoading(globals.main_window, { width: Ti.UI.FILL, height: Ti.UI.FILL, message: L('loading_waiting_first')});
+				var timer = setInterval(function(){
+					if( globals.balances != null ){
+						if( loading != null ) loading.removeSelf();
+						clearInterval(timer);
+						load();
+					}
+				}, 500);
+			}	
+			if( Ti.App.Properties.getString('shows_dex_how3') !== 'FALSE'){
+			    var dialog = _requires['util'].createDialog({
+			   		title:L('exchange_how_to_title'),
+					message:L('exchange_how_to'),
+					buttonNames: [L('text_dont_show'), L('how_to_exchange_ok')]
+				});
+				dialog.addEventListener('click', function(e){
+					if( e.index == e.source.cancel ){
+						Ti.App.Properties.setString('shows_dex_how3', "FALSE");
+					}
+				});
+				dialog.show();
+			}
+			Ti.API.dexLoad = 'YES';
+		}
+	}
+	

@@ -40,6 +40,78 @@ module.exports = (function() {
 		};
 		xhr.send( params.post );
 	};
+	self.connectDELETE = function( params ){
+		var xhr = Ti.Network.createHTTPClient();
+		xhr.open('DELETE', Alloy.CFG.api_uri + 'wallet/v1/' + params.method);
+		xhr.onload = function(){
+			var results = '';
+			try{
+				results = JSON.parse( this.responseText );
+			}
+			catch(e){}
+			params.callback( results );
+			if( params.always != null ) params.always();
+		},
+		xhr.onerror = function(e){
+			onerror(params, e);
+			if( params.always != null ) params.always();
+		};
+		xhr.send();
+	};
+	self.connectPUT = function( params ){
+		var xhr = Ti.Network.createHTTPClient();
+		xhr.open('PUT', Alloy.CFG.api_uri + 'wallet/v1/' + params.method);
+		xhr.onload = function(){
+			var results = '';
+			try{
+				results = JSON.parse( this.responseText );
+			}
+			catch(e){}
+			params.callback( results );
+			if( params.always != null ) params.always();
+		},
+		xhr.onerror = function(e){
+			onerror(params, e);
+			if( params.always != null ) params.always();
+		};
+		xhr.send( params.post );
+	};
+	self.connectPOST = function( params ){
+		var xhr = Ti.Network.createHTTPClient();
+		xhr.open('POST', Alloy.CFG.api_uri + 'wallet/v1/' + params.method);
+		xhr.onload = function(){
+			var results = '';
+			try{
+				results = JSON.parse( this.responseText );
+			}
+			catch(e){}
+			params.callback( results );
+			if( params.always != null ) params.always();
+		},
+		xhr.onerror = function(e){
+			onerror(params, e);
+			if( params.always != null ) params.always();
+		};
+		xhr.send( params.post );
+	};
+	self.connectGET = function( params ){
+		var xhr = Ti.Network.createHTTPClient();
+		xhr.open('GET', Alloy.CFG.api_uri + 'wallet/v1/' + params.method);
+		xhr.onload = function(){
+			var results = '';
+			try{
+				results = JSON.parse( this.responseText );
+			}
+			catch(e){}
+			params.callback( results );
+			if( params.always != null ) params.always();
+		},
+		xhr.onerror = function(e){
+			onerror(params, e);
+			if( params.always != null ) params.always();
+		};
+		xhr.send();
+	};
 	
 	self.getjson = function( params ){
 		var xhr = Ti.Network.createHTTPClient();
@@ -54,6 +126,7 @@ module.exports = (function() {
 			}
 			catch(e){}
 			params.callback( json_data );
+			if( params.always != null ) params.always();
 		},
 		xhr.onerror = function(e){
 			onerror(params, e);

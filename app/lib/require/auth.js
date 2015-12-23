@@ -38,7 +38,7 @@ module.exports = (function() {
 					});
 					dialog.origin.addEventListener('click', function(e){
 						var inputText = (OS_ANDROID)?dialog.androidField.value: e.text;
-					  	if( e.index == 1 ){
+					  	if( e.index != e.source.cancel ){
 					  		if( cache.data.password === inputText ){
 								params.callback({ success: true, reason: self.REASON_PASSWORD, inputText: inputText });
 							}
@@ -112,7 +112,7 @@ module.exports = (function() {
 					});
 					dialog.origin.addEventListener('click', function(e){
 						var inputText = (OS_ANDROID)?dialog.androidField.value: e.text;
-					  	if( e.index == 1 ){
+					  	if( e.index != e.source.cancel ){
 					  		if( cache.data.password === inputText ){
 								params.callback({ success: true, reason: self.REASON_PASSWORD, inputText: inputText });
 							}

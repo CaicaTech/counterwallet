@@ -30,9 +30,7 @@ var w = new Array(
 	'assetholders.js',
 	'assetinfo.js',
 	'createtoken.js',
-	'history.js',
 	'login.js',
-	'dex.js',
 	'home.js',
 	'settings.js',
 	'send.js',
@@ -73,8 +71,14 @@ Number.prototype.toFixed2 = function(digit){
 };
 
 var image_url =  'https://counterpartychain.io/content/images/icons/-.png';
-var default_image = Ti.UI.createImageView({image: image_url});
-globals.coindaddy_default = Ti.Utils.base64encode(default_image.toBlob()).toString();
+globals.coindaddy_default = null;
+try{
+	var default_image = Ti.UI.createImageView({image: image_url});
+	globals.coindaddy_default = Ti.Utils.base64encode(default_image.toBlob()).toString();
+}
+catch(e){
+	globals.coindaddy_default = '';
+}
 
 Math._getDecimalLength = function(value) {
     var list = (value.toString()).split('.'), result = 0;
@@ -114,25 +118,6 @@ function reorg_finish(){
 	if( globals.isReorg ){
 		globals.isReorg = false;
 		globals.reorg_views['home'].removeSelf();
-		globals.reorg_views['history'].removeSelf();
-		globals.reorg_views['dex'].removeSelf();
-		globals.reorg_views['shapeshift'].removeSelf();
-		
-		if( globals.currentTabIndex == 0 ){
-			globals.loadBalance();
-		}
-		else if( globals.currentTabIndex == 1 ){
-			 if( Ti.API.ssLoad == 'NO' ) globals.windows['shapeshift'].run();
-		}
-	    else if( globals.currentTabIndex == 2 ){
-	    	if( Ti.API.dexLoad == 'NO' ){
-		    	globals.windows['dex'].run();
-		    	if( globals.change_box2_asset_balance != null ) globals.change_box2_asset_balance();
-		    }
-	    }
-	    else if( globals.currentTabIndex == 3 ){
-	    	if( Ti.API.historyLoad == 'NO' ) globals.windows['history'].run();
-	    }
 	}
 };
 
@@ -184,16 +169,17 @@ globals.backgroundfetch = function (e) {
 globals.reorg_occured = function(){
 	if( !globals.isReorg ){
 		globals.isReorg = true;
-		globals.reorg_views['home'] = globals.requires['util'].setReorg(Ti.API.home_win);
-		globals.reorg_views['history'] = globals.requires['util'].setReorg(Ti.API.history_win);
-		globals.reorg_views['dex'] = globals.requires['util'].setReorg(Ti.API.exchange_win);
-		globals.reorg_views['shapeshift'] = globals.requires['util'].setReorg(Ti.API.ss_win);
 		
 		if( OS_IOS ){
+			globals.reorg_views['home'] = globals.requires['util'].setReorg(Ti.API.home_win);
+			globals.reorg_views['history'] = globals.requires['util'].setReorg(Ti.API.history_win);
+			globals.reorg_views['dex'] = globals.requires['util'].setReorg(Ti.API.exchange_win);
+			globals.reorg_views['shapeshift'] = globals.requires['util'].setReorg(Ti.API.ss_win);
 			Ti.App.iOS.setMinimumBackgroundFetchInterval( Ti.App.iOS.BACKGROUNDFETCHINTERVAL_MIN );
 			Ti.App.iOS.addEventListener( 'backgroundfetch', globals.backgroundfetch );
 		}
 		else{
+			globals.reorg_views['home'] = globals.requires['util'].setReorg(globals.main_window);
 			var intent = Ti.Android.createServiceIntent( { url: 'background/fetch.js' } );
 			intent.putExtra('interval', 15000);
 			service = Ti.Android.createService(intent);
@@ -218,24 +204,86 @@ globals._parseCip2 = function( url ){
 	}
 	return data;
 };
+function urlToObject(url)	{
+	var	returnObj	=	{};
+	url	=	url.replace('URLSCHEME://?',	'');
+	var	params	=	url.split('&');
+	params.forEach(function(param)	{
+																
+		var	keyAndValue	=	param.split('=');
+		returnObj[keyAndValue[0]]	=	decodeURI(keyAndValue[1]);
+	});
+	return	obj;
+}
 
-var lastUrl = null;
 globals._parseArguments = function( url, is_fromQR ) {
 	if( url == null ){
 		if( OS_IOS ) url = Ti.App.getArguments()['url'];
 		else{
-			var launchIntent = Ti.App.Android.launchIntent;
-		    if( launchIntent.hasExtra('source') ) url = 'indiewallet://' + launchIntent.getStringExtra('source');
+			function parseUri(sourceUri){
+			    var uriPartNames = ["source","protocol","authority","domain","port","path","directoryPath","fileName","query","anchor"];
+			    var uriParts = new RegExp("^(?:([^:/?#.]+):)?(?://)?(([^:/?#]*)(?::(\\d*))?)?((/(?:[^?#](?![^?#/]*\\.[^?#/.]+(?:[\\?#]|$)))*/?)?([^?#/]*))?(?:\\?([^#]*))?(?:#(.*))?").exec(sourceUri);
+			    var uri = {};
+			    for(var i = 0; i < 10; i++) uri[uriPartNames[i]] = (uriParts[i] ? uriParts[i] : "");
+			    if(uri.directoryPath.length > 0) uri.directoryPath = uri.directoryPath.replace(/\/?$/, "/");
+			    return uri;
+			}
+				
+			var activity = Ti.Android.currentActivity;
+			var data = activity.getIntent().getData();
+			if( data != null ){
+				activity.finish();
+				var parser = parseUri(data);
+				if( parser["protocol"] === "indiewallet" && parser["domain"] === "getaddress" ){
+					var returnApp = parser["query"].replace('success=','');
+					Ti.Platform.openURL(returnApp+'://sendaddress?address='+Ti.App.Properties.getString("current_address"));
+				}
+			}
+			else{
+				var launchIntent = Ti.App.Android.launchIntent;
+			    if( launchIntent != null ){ 
+			   		if( launchIntent.hasExtra('source') ){
+			   			url = 'indiewallet://' + launchIntent.getStringExtra('source');
+			   		}
+			   	}
+			}
 		}
 	}
-	if( url && (is_fromQR || lastUrl !== url) ) {
-		lastUrl = url;
-		if( url.match(/^indiewallet:\/\//) ){
+	
+	var _requires = globals.requires;
+	if( url && (is_fromQR || globals.lastUrl !== url) ) {
+		globals.lastUrl = url;
+		if( url.match(/^indiewallet:\/\/x-callback-url/) ){
+			var scheme = url.replace(/^indiewallet:\/\/x-callback-url\//, '').split('?');
+			var func = scheme[0];
+			var params = new Array();
+			
+			var p = scheme[1].split('&');
+			for(var i = 0; i < p.length; i++){
+				var a = p[i].split('=');
+				params[a[0]] = decodeURIComponent(a[1]);
+			}	
+			if( func === 'getaddress' ){
+				if( 'x-success' in params ){
+					Ti.Platform.openURL(params['x-success'] + 'address=' + _requires['cache'].data.address);
+				}
+			}
+		}
+		else if( url.match(/^indiewallet:\/\//) ){
+			var loading;
+			if( OS_IOS ){
+				if( Ti.API.home_win != null ){ loading = _requires['util'].showLoading(Ti.API.home_win, { width: Ti.UI.FILL, height: Ti.UI.FILL, message: L('label_please_wait')});}
+			}
+			else{
+				if( globals.main_window != null ){ loading = _requires['util'].showLoading(globals.main_window, { width: Ti.UI.FILL, height: Ti.UI.FILL, message: L('label_please_wait')});}
+			}
 	    	var scheme = url.replace(/^indiewallet:\/\//, '').split('?');
 	    	
 	    	var func = scheme[0];
 	    	var params = JSON.parse(decodeURIComponent(scheme[1].split('=')[1]));
+	    	
 	    	Ti.include('require/pubnub.js');
+			
 			var pubnub = PUBNUB({
 			    publish_key       : Alloy.CFG.pubnub_pub,
 			    subscribe_key     : Alloy.CFG.pubnub_sub,
@@ -248,49 +296,76 @@ globals._parseArguments = function( url, is_fromQR ) {
 					var s = setInterval(function(){
 						if( globals.balances != null && globals.tiker != null ){
 				            clearInterval(s);
-							var _requires = globals.requires;
-							_requires['network'].connect({
-								'method': 'get_vendings',
-								'post': {
-									vending_id: params.id
-								},
-								'callback': function( result ){
-									var send_token = null;
-									for( var i = 0; i < globals.balances.length; i++ ){
-										if( globals.balances[i].asset === result.vendings[0].accept_token ){
-											send_token = globals.balances[i];
-											break;
-										}
+				            
+				            function gotoScreen( data ){
+				            	if( loading != null ) loading.removeSelf();
+				            	var asset = (data.accept_token != null)? data.accept_token: data.asset;
+				            	
+				            	var send_token = null;
+								for( var i = 0; i < globals.balances.length; i++ ){
+									if( globals.balances[i].asset === asset ){
+										send_token = globals.balances[i];
+										break;
 									}
-									if( send_token != null ){
-										var data = {
-											'asset': send_token.asset,
-											'balance': send_token.balance,
-											'fiat': globals.requires['tiker'].to(send_token.asset, send_token.balance, globals.requires['cache'].data.currncy),
-											'address': result.vendings[0].address,
-											'amount': params.amount,
-											'channel': params.channel,
-											'currency': result.vendings[0].currency
-										};
-										globals.windows['send'].run(data);
-										globals.publich = function(data){
-											pubnub.publish({
-											    channel : params.channel,
-											    message : JSON.stringify(data),
-												callback: function(m){
-													Ti.API.info(JSON.stringify(m));
-												}
-											});
-										};
+								}
+								if( send_token != null ){
+									var data = {
+										'asset': send_token.asset,
+										'balance': send_token.balance,
+										'fiat': globals.requires['tiker'].to(send_token.asset, send_token.balance, globals.requires['cache'].data.currncy),
+										'address': (data.destination != null)? data.destination: data.address,
+										'amount': params.amount,
+										'channel': params.channel,
+										'currency': data.currency
+									};
+									
+									globals.windows['send'].run(data);
+									globals.publich = function(data){
+										pubnub.publish({
+										    channel : params.channel,
+										    message : JSON.stringify(data),
+											callback: function(m){
+												Ti.API.info(JSON.stringify(m));
+											}
+										});
+									};
+								}
+								else{
+									globals.requires['util'].createDialog({
+										message: L('label_errortokenfound').format({token: asset}),
+										buttonNames: [L('label_close')]
+									}).show();
+								}
+				            }
+				            
+				            if( params.id != null ){
+				            	_requires['network'].connect({
+									'method': 'get_vendings',
+									'post': {
+										vending_id: params.id
+									},
+									'callback': function( result ){
+										gotoScreen( result.vendings[0] );
+									},
+									'onError': function(error){
+										if( loading != null ) loading.removeSelf();
+										
+										globals.requires['util'].createDialog({
+											message: L('text_readerror'),
+											buttonNames: [L('label_close')]
+										}).show();
 									}
-								},
-								'onError': function(error){}
-							});
+								});
+							}
+							else{
+								gotoScreen( params );
+							}
 				        }
 					}, 100);
 				}
 			}
 			else{
+				if( loading != null ) loading.removeSelf();
 				function authorization(){
 			    	globals.requires['auth'].check({ title: L('text_authentication'), callback: function(e){
 						if( e.success ){
@@ -300,6 +375,21 @@ globals._parseArguments = function( url, is_fromQR ) {
 									    channel : params.channel,
 									    message : JSON.stringify(data),
 										callback: function(m){
+											if( params.vending_wait_id != null ){
+												_requires['network'].connect({
+													'method': 'edit_vendingwait',
+													'post': {
+														id: params.vending_wait_id,
+														status: 2
+													},
+													'callback': function( result ){
+														Ti.API.info('success');
+													},
+													'onError': function(error){
+														Ti.API.info('failed');
+													}
+												});
+											}
 										}
 									});
 								}
@@ -319,6 +409,25 @@ globals._parseArguments = function( url, is_fromQR ) {
 									'cs': params.cs
 								};
 								publish( data );
+							}
+							else if( func === 'new_address' ){
+								globals.addWallet(function(params){
+									if( params.status ){
+										var data = {
+											'id': globals.requires['cache'].data.id,
+											'cs': params.cs,
+											'address': params.address
+										};
+									}
+									else{
+										var data = {
+											'id': globals.requires['cache'].data.id,
+											'cs': params.cs,
+											'address': params.action
+										};
+									}
+									publish( data );
+								});
 							}
 							else if( func === 'sign' ){
 								pubnub.subscribe({
@@ -352,10 +461,10 @@ globals._parseArguments = function( url, is_fromQR ) {
 					}});
 				}
 				var s = setInterval(function(){
-					if( globals.open ){
-			            clearInterval(s);
-			            authorization();
-			        }
+					//if( globals.open ){
+			        clearInterval(s);
+			        authorization();
+			        //}
 				}, 100);
 			}
 	    	

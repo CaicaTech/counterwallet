@@ -1,14 +1,9 @@
-var theWindow = Ti.UI.createWindow({
-	title : L('label_tab_ss'),
-	backgroundColor : '#e5e5e5',
-	orientationModes : [Ti.UI.PORTRAIT],
-	navBarHidden : true
-});
-if( OS_IOS ) theWindow.statusBarStyle = Ti.UI.iPhone.StatusBar.LIGHT_CONTENT;
-exports.run = function() {
+exports.run = function(params) {
+	var _requires = globals.requires;
+	var win = _requires['layer'].createWindow();
+	if( OS_IOS ) win.statusBarStyle = Ti.UI.iPhone.StatusBar.LIGHT_CONTENT;
 	var didLoadOnce = false;
 	var _windows = globals.windows;
-	var _requires = globals.requires;
 	
 	var btc_xcp_limit = -1;
 	var btc_xcp_min = -1;
@@ -28,7 +23,7 @@ exports.run = function() {
 	
 	if( globals.balances != null ) load();
 	else{
-		var loading = _requires['util'].showLoading(theWindow, { width: Ti.UI.FILL, height: Ti.UI.FILL, message: L('loading_waiting_first')});
+		var loading = _requires['util'].showLoading(win, { width: Ti.UI.FILL, height: Ti.UI.FILL, message: L('loading_waiting_first')});
 		var timer = setInterval(function(){
 			if( globals.balances != null && globals.tiker != null ){
 				if( loading != null ) loading.removeSelf();
@@ -53,7 +48,7 @@ exports.run = function() {
 		getBalances();			
 		
 		var main_view = Ti.UI.createView({ backgroundColor:'#ececec', width: Ti.UI.FILL, height: Ti.UI.FILL });
-		theWindow.add(main_view);
+		win.origin.add(main_view);
 		
 		var btc_xcp_bar = Ti.UI.createView({ backgroundColor:'#ececec', width: Ti.UI.FILL, height: 70 });
 		btc_xcp_bar.top = 0;
@@ -67,6 +62,7 @@ exports.run = function() {
 	        width : 40,
 	        height : 35
 	    });
+		
 		
 		var token_left_image = _requires['util'].makeImage({
 		    image: '/images/asset_xcp.png',
@@ -85,7 +81,7 @@ exports.run = function() {
 				
 		var sell_label = _requires['util'].makeLabel({
 			text:L('label_sell'),
-			width: 30,
+			width: Ti.UI.SIZE,
 			color:'#e54353',
 			font:{ fontSize:15, fontWeight:'normal'},
 			bottom:5, left:145,
@@ -93,7 +89,7 @@ exports.run = function() {
 		
 		var buy_label = _requires['util'].makeLabel({
 			text:L('label_buy'),
-			width: 30,
+			width: Ti.UI.SIZE,
 			color:'#e54353',
 			font:{ fontSize:15, fontWeight:'normal'},
 			bottom:5, left:35,
@@ -110,6 +106,44 @@ exports.run = function() {
 		});
 		main_view.add(view);
 		view.add(top_bar);
+		
+		
+		var back_home_responsive = Ti.UI.createButton({
+	        backgroundColor : "transparent",
+	        title : "",
+	        color:'white',
+	        left:5,
+	        top:5,
+	        width :100,
+	        height : 100,
+	        font:{fontFamily:'Gill Sans', fontSize:20, fontWeight:'light'}
+	    });
+		
+		
+		var back_home = _requires['util'].makeLabel({
+			text:L('label_tab_home'),
+			color:"white",
+			font:{ fontSize:15, fontWeight:'normal'},
+			textAlign: 'right',
+			top: 25, left:10
+		});
+		top_bar.add( back_home );
+	
+		back_home.addEventListener('touchstart', function(){
+			win.close();
+		});
+		
+		
+		top_bar.add( back_home_responsive );
+	
+		back_home_responsive.addEventListener('touchstart', function(){
+			win.close();
+		});
+		back_home_responsive.addEventListener('click', function(){
+			win.close();
+		});
+		
+		
 		var send_amount = '';
 		
 		var token_amount_field = _requires['util'].makeLabel({
@@ -593,7 +627,7 @@ exports.run = function() {
 		});
 		
 		confirm_button.addEventListener('touchstart', function(){
-			var loading = _requires['util'].showLoading(theWindow, { width: Ti.UI.FILL, height: Ti.UI.FILL });
+			var loading = _requires['util'].showLoading(main_view, { width: Ti.UI.FILL, height: Ti.UI.FILL });
 			_requires['network'].connect({
 				'method': 'shapeshift',
 				'post': {
@@ -625,12 +659,14 @@ exports.run = function() {
 											'method': 'create_send',
 											'post': {
 												id: _requires['cache'].data.id,
+												address: _requires['cache'].data.address,
 												asset: sell_token,
 												destination: deposit_address,
 												quantity: result.depositAmount
 											},
 											'callback': function( result ){
 												_requires['bitcore'].sign(result.unsigned_hex, {
+													'address': _requires['cache'].data.address,
 													'callback': function(signed_tx){
 														_requires['network'].connect({
 															'method': 'sendrawtransaction',
@@ -688,19 +724,24 @@ exports.run = function() {
 		});
 		Ti.API.ssLoad = 'YES';
 		
-		if( Ti.App.Properties.getString('shows_ss') !== 'FALSE'){
+		
+	}
+	
+	if(OS_IOS) Ti.API.home_tab.open(win.origin,{ animated:true });
+	if(OS_ANDROID) win.origin.open({ animated:true });
+	
+	if( Ti.App.Properties.getString('shows_ss') !== 'FALSE'){
 		   var dialog = _requires['util'].createDialog({
 		   		title:'Shapeshift',
 				message: L('text_shape_shift_how_to'),
-				buttonNames: ['OK',L('text_dont_show')]
+				buttonNames: [L('text_dont_show'), 'OK']
 			});
 			dialog.addEventListener('click', function(e){
-				if( e.index == 1 ){
+				if( e.index == e.source.cancel ){
 					Ti.App.Properties.setString('shows_ss', "FALSE");
 				}
 			});
 			dialog.show();
 		}
-	}
+	return win.origin;
 };
-Ti.API.ss_win = theWindow;

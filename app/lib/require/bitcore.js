@@ -5,8 +5,9 @@ module.exports = (function() {
 	var bitcore = require('vendor/bitcore');
 	var MnemonicJS = require('vendor/mnemonic');
 	var account = null;
+	var basePath = 'm/0\'/0/';
 	
-	self.init = function(passphrase){
+	self.init = function(passphrase, derive, nokeep){
 		if( passphrase == null ) return null;
 		
 		var words = passphrase.split(' ');
@@ -15,7 +16,35 @@ module.exports = (function() {
 		var bitcore = require('vendor/bitcore');
 		var master = bitcore.HDPrivateKey.fromSeed(seed);
 		
-		account = master.derive("m/0'/0/0");
+		var d = basePath + '0';
+		if( derive != null ) d = derive;
+		
+		var masterderive = master.derive( d );
+		if( !nokeep ) account = masterderive;
+		
+		return masterderive;
+	};
+	
+	self.createHDAddress = function( d ){
+		var _requires = globals.requires;
+		var derive = self.init(_requires['cache'].data.passphrase, basePath + d, true);
+		
+		return self.getAddress( derive );
+	};
+	
+	self.changeHD = function( d ){
+		var _requires = globals.requires;
+		
+		self.init(_requires['cache'].data.passphrase, basePath + d);
+		
+		_requires['cache'].data.address = self.getAddress();
+		_requires['cache'].save();
+		
+		var f3 = Ti.Filesystem.getFile(Ti.Filesystem.applicationDataDirectory, 'qr_address.png');
+		if( f3.exists() ){
+			f3.deleteFile();
+		}
+		return _requires['cache'].data.address;
 	};
 	
 	self.getpassphrase = function( passphrase ){
@@ -30,9 +59,14 @@ module.exports = (function() {
 		return m.toWords().toString().replace(/,/gi, ' ');
 	};
 	
-	self.getAddress = function(){
-		if( account == null ) return null;
-		return account.privateKey.toAddress().toString();
+	self.getAddress = function( derive ){
+		if( account == null && derive == null ) return null;
+		
+		var d = account;
+		if( derive != null ) d = derive;
+		
+		var priv = bitcore.PrivateKey(d.privateKey);
+		return priv.toAddress().toString();
 	};
 	
 	self.getPrivKey = function(){
@@ -41,9 +75,10 @@ module.exports = (function() {
 	};
 	
 	self.sign = function( raw_tx, params ){
-		if( globals.DEMO ) callback('signed_tx');
 		if( account == null ) return null;
-		bitcore.signrawtransaction(raw_tx, account.privateKey, params.callback, params.fail);
+		
+		params.pubkey = self.getPublicKey();
+		bitcore.signrawtransaction(raw_tx, self.getPrivKey(), params);
 	};
 	
 	self.getPublicKey = function( passphrase, bool ){

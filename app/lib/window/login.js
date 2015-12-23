@@ -8,7 +8,7 @@ module.exports.run = function(){
 	
 	var crypt = require('crypt/api');
 	var rsa_info = globals.requires['cache'].load_rsa();
-	
+	var isCreatingAccount = false;
 	var password = '';
 	for (var i = 0; i < 12; i++){
 		var random = Math.random() * 16 | 0;
@@ -73,7 +73,10 @@ module.exports.run = function(){
 		
 		var result = null;
 		if( (result = _requires['inputverify'].check()) == true ){
+			if(isCreatingAccount == false){
+				isCreatingAccount = true;
 		    createAccount({ 'passphrase': passphrase });
+		   }
 		}
 		else{
 			var dialog = _requires['util'].createDialog({
@@ -468,28 +471,21 @@ module.exports.run = function(){
 		var passphrase = params.passphrase;
 		
 		if( passphrase === 'demo' ){
-			password = 'demo3728';
+			passphrase = Alloy.Globals.demopassphrase;
 			globals.DEMO = true;
+			password = 'demo3728';
 		}
 		
 		var loading = _requires['util'].showLoading( win.origin, { width: Ti.UI.FILL, height: Ti.UI.FILL, style: 'dark', message: L('loading_createaccount') });
 		try{
 			var address, pubkey;
-			if( globals.DEMO ){
-				passphrase = 'DemoPassphrase';
-				address = '1TestWalletAddress';
-				pubkey = '02TestWalletPublicKey';
-			}
-			else{
-				passphrase = _requires['bitcore'].getpassphrase( passphrase );
-				_requires['bitcore'].init( passphrase );
-				address = _requires['bitcore'].getAddress();
-				pubkey = _requires['bitcore'].getPublicKey();
-			}
+			passphrase = _requires['bitcore'].getpassphrase( passphrase );
+			_requires['bitcore'].init( passphrase );
+			address = _requires['bitcore'].getAddress();
+			pubkey = _requires['bitcore'].getPublicKey();
 			
 			var b = require('crypt/bcrypt');
 			bcrypt = new b();
-			
 			bcrypt.hashpw(password, bcrypt.gensalt(10), function( pass_hash ) {
 				_requires['network'].connect({
 					'method': 'create_account',
@@ -508,8 +504,9 @@ module.exports.run = function(){
 						else _requires['cache'].data.currncy = 'USD';
 						_requires['cache'].save();
 						
-						globals.createTab();
 						globals.keepRegister = true;
+						if( OS_IOS ) globals.createTab();
+						win.origin.close();
 						_windows['home'].run();
 						if( OS_IOS ) win.origin.close();
 						
@@ -536,6 +533,7 @@ module.exports.run = function(){
 						alert(message);
 					},
 					'always': function(){
+						isCreatingAccount = false;
 						loading.removeSelf();
 					}
 				});
@@ -543,6 +541,7 @@ module.exports.run = function(){
 		}
 		catch(e){
 			loading.removeSelf();
+			isCreatingAccount = false;
 			_requires['util'].createDialog({
 				message: e.message,
 				buttonNames: [ L('label_close') ]
@@ -647,7 +646,10 @@ module.exports.run = function(){
 			globals.randomBytes = getRandom(128, parseInt(s, 2));
 			view.removeEventListener('touchmove', touchEvent);
 			Ti.Accelerometer.removeEventListener('update', getAccelerometer);
+			if(isCreatingAccount == false){
+				isCreatingAccount = true;
 			createAccount({ 'passphrase': null });
+			}
 		}
 	};
 	

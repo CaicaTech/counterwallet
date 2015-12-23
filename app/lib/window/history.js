@@ -1,20 +1,14 @@
-var theWindow =  Ti.UI.createWindow({
-	title: L('label_tab_3'),
-	backgroundColor:'#ececec',
-	orientationModes: [Ti.UI.PORTRAIT],
-	navBarHidden: true
-});
-if( OS_IOS ) theWindow.statusBarStyle = Ti.UI.iPhone.StatusBar.LIGHT_CONTENT;
-exports.run = function(){
+
 	var _windows = globals.windows;
     var _requires = globals.requires;
-    var view = Ti.UI.createView({ backgroundColor:'#ececec', width: Ti.UI.FILL, height: Ti.UI.FILL });
+    
+    var display_height = _requires['util'].getDisplayHeight();
+    var view_history = Ti.UI.createView({ backgroundColor:'#ececec', width: Ti.UI.FILL, height: Ti.UI.FILL });
 	
-	theWindow.add(view);
 	
-	var top_bar = Ti.UI.createView({ backgroundColor:'#e54353', width: Ti.UI.FILL, height: 55 });
+	var top_bar = Ti.UI.createView({ backgroundColor:'#e54353', width: Ti.UI.FILL, height: 60 });
 	top_bar.top = 0;
-	theWindow.add(top_bar);
+	view_history.add(top_bar);
 	
 	var history_title_center = _requires['util'].makeLabel({
 		text: L('label_tab_history'),
@@ -23,25 +17,58 @@ exports.run = function(){
 		textAlign: 'center',
 		top: 25, center: 0
 	});
-	top_bar.add(  history_title_center );
+	top_bar.add( history_title_center );
+	
+	if(OS_ANDROID){
+		history_title_center.top = 20;
+	}
+	
+	var t_hist = Ti.UI.create2DMatrix();
+	t_hist = t_hist.rotate(180);
+	var t_hist2 = Ti.UI.create2DMatrix();
+	t_hist2 = t_hist2.rotate(0);
+	var refreshAnimate_hist2 = Ti.UI.createAnimation({
+		transform : t_hist2,
+		duration : 0,
+		repeat : 1
+	});
+	var refreshAnimate_hist = Ti.UI.createAnimation({
+		transform : t_hist,
+		duration : 200,
+		repeat : 10
+	});
 	
 	
+	var refresh_button_hist = _requires['util'].makeImageButton({
+		image : '/images/icon_refresh.png',
+		width : 25,
+		height : 25,
+		right : 10,
+		top : 28,
+		listener : function() {
+			refresh_button_hist.animate(refreshAnimate_hist);
+			
+			setTimeout(function() { refresh_button_hist.animate(refreshAnimate_hist2); }, 2100);
+			loadHistory(true);
+		}
+	});
+	top_bar.add(refresh_button_hist);
+
+	if (OS_ANDROID) {
+		refresh_button_hist.top = 20;
+	}
 	
-	var scroll_view = Ti.UI.createScrollView({ scrollType: 'vertical', height: _requires['util'].getDisplayHeight() - 105, layout: 'vertical', showVerticalScrollIndicator: true });
-	scroll_view.top = 50;
-	view.add(scroll_view);
+	var scroll_view = Ti.UI.createScrollView({ scrollType: 'vertical', layout: 'vertical', height:display_height - 120, backgroundColor: 'transparent', showVerticalScrollIndicator: true });
+	//Ti.UI.createScrollView({ scrollType: 'vertical', height: _requires['util'].getDisplayHeight() - 105, layout: 'vertical', showVerticalScrollIndicator: true });
+	scroll_view.top = 60;
+	view_history.add(scroll_view);
 	
 	var loading = null, history_error = null;
 	function createList( result, bool ){
 		try{
-			Titanium.API.log(result);
 			scroll_view.removeAllChildren();
-			if( history_error != null ){
-				view.remove(history_error);
-				history_error = null;
-			}
 			if( result.transactions.length > 0 ){
-				Ti.API.historyLoad = 'YES';
+				Ti.API.isHistoryloaded = true;
 				function createBox( params ){
 					var box = _requires['util'].group();
 					box.height = params.height;
@@ -59,9 +86,12 @@ exports.run = function(){
 					var history = ''; var address = null;
 					
 					if( val.type === 'order' ){
-						
-							history = L('text_history_order').format({ 'give_quantity': val.give_quantity, 'give_asset': val.give_asset, 'get_quantity': val.get_quantity, 'get_asset': val.get_asset});
-						
+						if(val.get_asset === val.asset){
+							history = L('text_history_order_bought').format({ 'give_quantity': val.give_quantity, 'give_asset': val.give_asset, 'get_quantity': val.get_quantity, 'get_asset': val.get_asset});
+						}
+						else{
+							history = L('text_history_order_sold').format({ 'give_quantity': val.give_quantity, 'give_asset': val.give_asset, 'get_quantity': val.get_quantity, 'get_asset': val.get_asset});
+						}
 					}
 					else if( val.type === 'send' ){
 						if(val.category === 'Send'){
@@ -76,7 +106,8 @@ exports.run = function(){
 						}
 					}
 					else if( val.type === 'issuance' ){
-						history = L('text_history_issuance').format({ 'quantity': val.quantity, 'asset': val.asset, 'description': val.description });
+						if( val.transfer ) history = L('text_history_issuance_transfer').format({ 'asset': val.asset, 'from': val.source });
+						else history = L('text_history_issuance').format({ 'quantity': val.quantity, 'asset': val.asset, 'description': val.description });
 					}
 					else if( val.type === 'dividend' ){
 						history = L('text_history_dividend').format({ 'dividend_asset': val.dividend_asset, 'asset': val.asset, 'quantity_per_unit': (val.quantity_per_unit * 100) });
@@ -151,17 +182,26 @@ exports.run = function(){
 						})(address), false);
 					}
 				}
-				if( bool ) _requires['layer'].addPullEvent(scroll_view, { parent: view, margin_top: 70, callback: function(l){ loadHistory(false, l); }});
+				if( bool ){
+					_requires['layer'].addPullEvent(scroll_view, { parent: view_history, margin_top: 70, callback: function(l){
+						loadHistory(false, l);
+					}});
+				}
 			}
 			else{
-				Ti.API.historyLoad = 'NO';
-				view.removeAllChildren();
+				Ti.API.isHistoryloaded = false;
+				scroll_view.removeAllChildren();
 				if( history_error == null ){
 					history_error = _requires['util'].makeLabel({
 						text: L('text_nohistory'),
 						font:{ fontSize: 15 }
 					});
-					view.add(history_error);
+					history_error.width = Ti.UI.FILL;
+					history_error.height = Ti.UI.FILL;
+					history_error.addEventListener('touchstart', function(){
+						loadHistory(true);
+					});
+					view_history.add(history_error);
 				}
 			}
 		}
@@ -172,11 +212,17 @@ exports.run = function(){
 	
 	function loadHistory(bool, l){
 		loading = l;
-		if( bool ) loading = _requires['util'].showLoading(view, { width: Ti.UI.FILL, height: Ti.UI.FILL, message: L('loading_history')});
+		if( bool ) loading = _requires['util'].showLoading(view_history, { width: Ti.UI.FILL, height: Ti.UI.FILL, message: L('loading_history')});
+		if( history_error != null ){
+			view_history.remove(history_error);
+			history_error = null;
+		}
 		_requires['network'].connect({
 			'method': 'get_history',
 			'post': {
-				id: _requires['cache'].data.id
+				id: _requires['cache'].data.id,
+				address: _requires['cache'].data.address,
+				pubkey: _requires['bitcore'].getPublicKey()
 			},
 			'callback': function( result ){
 				createList( result, bool );
@@ -195,11 +241,11 @@ exports.run = function(){
 					history_error.width = '100%';
 					history_error.height = 50;
 					history_error.addEventListener('touchstart', function(){
-						view.remove(history_error);
+						view_history.remove(history_error);
 						history_error = null;
 						loadHistory(true);
 					});
-					view.add(history_error);
+					view_history.add(history_error);
 				}
 			},
 			'always': function(){
@@ -207,6 +253,5 @@ exports.run = function(){
 			}
 		});
 	}
-	loadHistory(true);
-};
-Ti.API.history_win = theWindow;
+	
+	

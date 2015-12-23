@@ -312,6 +312,13 @@ module.exports = (function() {
 	
 	self.createDialog = function( params, listener ){
 		if( params.title == null ) params.title = '';
+		if( params.buttonNames.length == 2 ){
+			if( OS_ANDROID ){
+				params.buttonNames.reverse();
+				if( params.cancel == null ) params.cancel = 1;
+			}
+			else if( params.cancel == null ) params.cancel = 0;
+		}
 		var dialog = Ti.UI.createAlertDialog(params);
 		if( listener!= null ) dialog.addEventListener('click', listener);
 		
@@ -336,22 +343,31 @@ module.exports = (function() {
 			
 		 	dialog.androidField = Ti.UI.createTextField(style);
 		    inputView.add( dialog.androidField );
+		    if( params.buttonNames.length == 2 ){
+		    	params.buttonNames.reverse();
+		    	if( params.cancel == null ) params.cancel = 1;
+		    }
 			origin = Ti.UI.createOptionDialog({
 	            title: params.title,
 	            message: params.message,
 	            androidView: inputView,
-	            buttonNames: params.buttonNames
+	            buttonNames: params.buttonNames,
+	            cancel: params.cancel
 	        });
 	        if( params.value ) dialog.androidField.setValue( params.value );
 	   	}
 	   	else{
+	   		if( params.buttonNames.length == 2 ){
+		    	if( params.cancel == null ) params.cancel = 0;
+		    }
 	   		var style = {
 				title: params.title,
 				message: params.message,
 				style: Ti.UI.iPhone.AlertDialogStyle.PLAIN_TEXT_INPUT,
-				buttonNames: params.buttonNames
+				buttonNames: params.buttonNames,
+				cancel: params.cancel
 			};
-	   		if( params.passwordMask ) style.style = Ti.UI.iPhone.AlertDialogStyle.SECURE_TEXT_INPUT;
+			if( params.passwordMask ) style.style = Ti.UI.iPhone.AlertDialogStyle.SECURE_TEXT_INPUT;
 			origin = Ti.UI.createAlertDialog(style);
 		}
 		dialog.origin = origin;
@@ -693,8 +709,10 @@ module.exports = (function() {
 		parent.add(act);
 		
 		act.removeSelf = function(){
-			parent.remove(act);
-			act = null;
+			if( act != null ){
+				parent.remove(act);
+				act = null;
+			}
 		};
 		
 		return act;

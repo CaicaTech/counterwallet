@@ -23,6 +23,16 @@ exports.run = function( params ){
 		win.close();
 	});
 	
+	var back_home_responsive = Ti.UI.createView({ backgroundColor:'transparent', width: '30%', height: '70%', top : 5, left: 0 });
+		top_bar.add( back_home_responsive );
+	
+		back_home_responsive.addEventListener('touchstart', function(){
+			win.close();
+		});
+		back_home_responsive.addEventListener('click', function(){
+			win.close();
+		});
+	
 	var settings_title_center = _requires['util'].makeLabel({
 		text:params.asset,
 		color:"white",
@@ -44,6 +54,7 @@ exports.run = function( params ){
 		'method': 'get_holders',
 		'post': {
 			id: _requires['cache'].data.id,
+			address: _requires['cache'].data.address,
 			asset: params.asset
 		},
 		'callback': function( result ){
@@ -78,6 +89,7 @@ exports.run = function( params ){
 			
 			for( var i = 0; i < result.holders.length; i++ ){
 				var val = result.holders[i];
+				
 				var box = createBox({ height: 70 });
 				box.top = 10;
 				box.add(
@@ -112,6 +124,8 @@ exports.run = function( params ){
 		}
 	});
 
-	Ti.API.home_tab.open(win.origin,{animated:true});
+	if( OS_IOS ) Ti.API.home_tab.open(win.origin,{animated:true});
+	else win.origin.open();
+	
 	return win.origin;
 };

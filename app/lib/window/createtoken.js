@@ -24,6 +24,15 @@ exports.run = function( params ){
 	back_home.addEventListener('click', function(){
 		win.close();
 	});
+	var back_home_responsive = Ti.UI.createView({ backgroundColor:'transparent', width: '30%', height: '70%', top : 5, left: 0 });
+		top_bar.add( back_home_responsive );
+	
+		back_home_responsive.addEventListener('touchstart', function(){
+			win.close();
+		});
+		back_home_responsive.addEventListener('click', function(){
+			win.close();
+		});
 	
 	var settings_title_center = _requires['util'].makeLabel({
 		text:"create token",
@@ -37,6 +46,25 @@ exports.run = function( params ){
 	var view = _requires['util'].group(null, 'vertical');
 	view.top = 50;
 	main_view.add(view);
+	
+	function createDescBox(text){
+		var box = _requires['util'].group();
+		box.width = '95%';
+		box.top = 3;
+		box.left = 5;
+		box.height = Ti.UI.SIZE;
+		
+		var label = _requires['util'].makeLabel({
+			text: text,
+			color: '#999999',
+			font:{ fontSize: 10 },
+			textAlign: 'left',
+			left: 0
+		});
+		box.add(label);
+		
+		return box;
+	}
 	
 	function createBox( params ){
 		var box = _requires['util'].group(params.add);
@@ -75,7 +103,7 @@ exports.run = function( params ){
 	
 	var box_token = createBox({ height: 50, add: {
 		'field': _requires['util'].makeTextField({
-			hintText: L('label_tokenname'),
+			hintText: L('label_ex_tokenname'),
 			width: '70%', height: 35,
 			left: 15,
 			border: 'hidden'
@@ -101,7 +129,7 @@ exports.run = function( params ){
 	
 	var box_quantity = createBox({ height: 45, add: {
 		'field': _requires['util'].makeTextField({
-			hintText: L('label_quantity_issue'),
+			hintText: L('label_ex_quantity_issue'),
 			width: Ti.UI.FILL, height: 35,
 			left: 15,
 			border: 'hidden',
@@ -112,7 +140,7 @@ exports.run = function( params ){
 	
 	var box_description = createBox({ height: 45, add: {
 		'field': _requires['util'].makeTextField({
-			hintText: L('label_description'),
+			hintText: L('label_ex_description'),
 			width: Ti.UI.FILL, height: 35,
 			left: 15,
 			border: 'hidden'
@@ -122,23 +150,13 @@ exports.run = function( params ){
 	
 	var box_website = createBox({ height: 45, add: {
 		'field': _requires['util'].makeTextField({
-			hintText: L('label_website'),
+			hintText: L('label_ex_website'),
 			width: Ti.UI.FILL, height: 35,
 			left: 15,
 			border: 'hidden'
 		})
 	} });
 	box_website.top = 10;
-	
-	var box_pgpsig = createBox({ height: 45, add: {
-		'field': _requires['util'].makeTextField({
-			hintText: L('label_pgpsig'),
-			width: Ti.UI.FILL, height: 35,
-			left: 15,
-			border: 'hidden'
-		})
-	} });
-	box_pgpsig.top = 10;
 	
 	var box_divisible = createBox({ height: 50, add: {
 		'label': _requires['util'].makeLabel({
@@ -200,9 +218,9 @@ exports.run = function( params ){
 	sl_image.origin.right = 10;
 	box_image.add(sl_image.origin);
 	
-	 var send_button = Ti.UI.createButton({
+	var send_button = Ti.UI.createButton({
         backgroundColor : "#e54353",
-        title : "send",
+        title : L('label_create'),
         color:'white',
         width : "110",
         height : "40",
@@ -224,14 +242,14 @@ exports.run = function( params ){
 				buttonNames: [L('label_cancel'), L('label_ok')]
 			});
 			dialog.addEventListener('click', function(e){
-				if( e.index == 1 ){
+				if( e.index != e.source.cancel ){
 					if( token.charAt(0) != 'A' && xcp_balance < 0.5 ){
 						var dialog = _requires['util'].createDialog({
 							message: L('label_get_xcp'),
 							buttonNames: [L('label_close'),L('label_buy_xcp')]
 						});
 						dialog.addEventListener('click', function(e){
-							if( e.index == 1 ){
+							if( e.index != e.source.cancel ){
 								globals.tabGroup.setActiveTab(globals.tabGroup.tabs[1]);
 								win.close();
 							}
@@ -248,14 +266,14 @@ exports.run = function( params ){
 										asset: token,
 										media: blobImage,
 										description: box_description.field.value,
-										website: box_website.field.value,
-										pgpsig: box_pgpsig.field.value,
+										website: box_website.field.value
 									},
 									'callback': function( url ){
 										_requires['network'].connect({
 											'method': 'create_issuance',
 											'post': {
 												id: _requires['cache'].data.id,
+												address: _requires['cache'].data.address,
 												token: token,
 												description: url.uri,
 												quantity: box_quantity.field.value,
@@ -263,6 +281,7 @@ exports.run = function( params ){
 											},
 											'callback': function( result ){
 												_requires['bitcore'].sign(result.unsigned_hex, {
+													'address': _requires['cache'].data.address,
 													'callback': function(signed_tx){
 														_requires['network'].connect({
 															'method': 'sendrawtransaction',
@@ -320,18 +339,29 @@ exports.run = function( params ){
 	});
 	send_button.top = 10;
 	
+	var bottom_space = _requires['util'].group();
+	bottom_space.width = Ti.UI.FILL;
+	bottom_space.height = 20;
+	
 	view.add(_requires['util'].group({
 		'box_token': box_token,
+		'box_token_desc': createDescBox(L('label_create_token_desc')),
 		'box_quantity': box_quantity,
+		'box_quantity_desc': createDescBox(L('label_create_quantity_desc')),
 		'box_description': box_description,
+		'box_description_desc': createDescBox(L('label_create_description_desc')),
 		'box_website': box_website,
-		'box_pgpsig': box_pgpsig,
+		'box_website_desc': createDescBox(L('label_create_website_desc')),
 		'box_image': box_image,
+		'box_image_desc': createDescBox(L('label_create_image_desc')),
 		'box_divisible': box_divisible,
-		'send_button': send_button
+		'box_divisible_desc': createDescBox(L('label_create_divisible_desc')),
+		'send_button': send_button,
+		'bottom_space': bottom_space
 	}, 'vertical'));
 	
-	Ti.API.home_tab.open(win.origin,{animated:true});
+	if(OS_IOS) Ti.API.home_tab.open(win.origin,{ animated:true });
+	if(OS_ANDROID) win.origin.open({ animated:true });
 	
 	if( xcp_balance < 0.5 ){
 		var dialog = _requires['util'].createDialog({
@@ -339,8 +369,8 @@ exports.run = function( params ){
 			buttonNames: [L('label_close'),L('label_buy_xcp')]
 		});
 		dialog.addEventListener('click', function(e){
-			if( e.index == 1 ){
-				globals.tabGroup.setActiveTab(globals.tabGroup.tabs[1]);
+			if( e.index != e.source.cancel ){
+				globals.windows['shapeshift'].run();
 				win.close();
 			}
 		});

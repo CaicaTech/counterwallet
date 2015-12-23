@@ -112,7 +112,6 @@ module.exports = (function() {
 		
 		var s = 0, s_total = 0, top = view.children[0].top;
 		function scroll( y ){
-			globals.is_scrolling = true;
 			if(y > -60){
 				reload.opacity = (y / -60);
 				reload.image = '/images/icon_reload_off.png';
@@ -121,12 +120,10 @@ module.exports = (function() {
 				reload.opacity = 1.0;
 				reload.image = '/images/icon_reload_on.png';
 			}
-			
 			var t = Ti.UI.create2DMatrix();
 			reload.transform = t.rotate(90 - (90 * reload.opacity)).scale(reload.opacity, reload.opacity);
 		}
 		function release( y ){
-			globals.is_scrolling = false;
 			if( y < -60 ){
 				if( OS_ANDROID ){
 					view.children[0].top = y;
@@ -138,44 +135,14 @@ module.exports = (function() {
 				var loading = util.showLoading(params.parent, { width: Ti.UI.FILL, height: 25, top: (a != null)? util.convert_y(a.y): params.margin_top });
 				params.callback(loading);
 			}
-			else if( OS_IOS && view.contentOffset.y == 0 ){
+			else if( OS_ANDROID ){
 				view.children[0].animate({ top: top, duration: 100 });
 				s_total = 0;
-			}
-			else if( view.contentOffset.y <= 0 ){
-				if( OS_ANDROID ){
-					view.children[0].animate({ top: top, duration: 100 });
-					s_total = 0;
-				}
 			}
 			reload.image = '/images/icon_reload_off.png';
 			reload.opacity = 0.0;
 		}
 		if( OS_IOS ){
-			var move = 0;
-			view.addEventListener('touchstart', function(e){
-				s = e.y;
-				move = 0;
-				if( s_total < 0 ) s_total = 0;
-			});
-			view.addEventListener('touchmove', function(e){
-				if( move++ > 3 ){
-					if( params.scrollableView != null ) params.scrollableView.scrollingEnabled = false;
-					if( s != 0 ){
-						var diff = (s - e.y);
-						if( Math.abs(diff) < 100 ) s_total += diff;
-						view.children[0].top = -s_total;
-						scroll(-view.children[0].top);
-					}
-					s = e.y;
-				}
-			});
-			view.addEventListener('touchend', function(e){
-				if( params.scrollableView != null ) params.scrollableView.scrollingEnabled = true;
-				release( -view.children[0].top );
-				s = 0;
-			});
-			
 			view.addEventListener('scroll', function(e){
 				if( view.contentOffset.y <= 0 ) scroll( view.contentOffset.y );
 			});
@@ -192,16 +159,24 @@ module.exports = (function() {
 			});
 			view.addEventListener('touchmove', function(e){
 				if( move++ > 3 ){
-					if( s != 0 ){
-						var diff = (s - e.y) / 2;
-						if( Math.abs(diff) < 100 ) s_total += diff;
-						view.children[0].top = -s_total;
-						scroll(-view.children[0].top);
+					globals.is_scrolling = true;
+					if( view.contentOffset.y <= 0 || view.children[0].top > top ){
+						if( s != 0 ){
+							var diff = (s - e.y) / 2;
+							if( Math.abs(diff) < 100 ) s_total += diff;
+							view.children[0].top = -s_total;
+							if( view.children[0].top <= top ){
+								view.children[0].top = top;
+								view.scrollingEnabled = true;
+							}
+							scroll(-view.children[0].top);
+						}
+						s = e.y;
 					}
-					s = e.y;
 				}
 			});
 			view.addEventListener('touchend', function(e){
+				globals.is_scrolling = false;
 				release( -view.children[0].top );
 				s = 0;
 			});

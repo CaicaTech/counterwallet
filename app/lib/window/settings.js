@@ -1,23 +1,33 @@
-var theWindow =  Ti.UI.createWindow({
-	title:L('label_tab_settings'),
-	backgroundColor:'#ececec',
-	orientationModes: [Ti.UI.PORTRAIT],
-	navBarHidden: true
-});
-if( OS_IOS ) theWindow.statusBarStyle = Ti.UI.iPhone.StatusBar.LIGHT_CONTENT;
 
 exports.run = function(){
-
+	
 	var _windows = globals.windows;
     var _requires = globals.requires;
+    
+	var win = _requires['layer'].createWindow();
+	if( OS_IOS ) win.statusBarStyle = Ti.UI.iPhone.StatusBar.LIGHT_CONTENT;
+    
     var currenciesArray = [];
     var main_view = Ti.UI.createScrollView({ backgroundColor:'#ececec', width: Ti.UI.FILL, height: Ti.UI.FILL });
 	main_view.top = 15;
-	theWindow.add(main_view);
+	win.origin.add(main_view);
 	
 	var top_bar = Ti.UI.createView({ backgroundColor:'#e54353', width: Ti.UI.FILL, height: 55 });
 	top_bar.top = 0;
-	theWindow.add(top_bar);
+	win.origin.add(top_bar);
+	
+	var back_home = _requires['util'].makeLabel({
+			text:L('label_tab_home'),
+			color:"white",
+			font:{ fontSize:15, fontWeight:'normal'},
+			textAlign: 'right',
+			top: 25, left:10
+		});
+		top_bar.add( back_home );
+	
+		back_home.addEventListener('touchstart', function(){
+			win.close();
+		});
 	
 	var settings_title_center = _requires['util'].makeLabel({
 		text:L('label_tab_settings'),
@@ -108,7 +118,7 @@ exports.run = function(){
 		});
 		dialog.origin.addEventListener('click', function(e){
 			var inputText = (OS_ANDROID)?dialog.androidField.getValue():e.text;
-			if( e.index == 1 ){
+			if( e.index != e.source.cancel ){
 				if( inputText.length > 0 && inputText !== info.user_name ){
 					_requires['auth'].check({ title: L('text_confirmsend'), callback: function(e){
 						if( e.success ){
@@ -141,111 +151,6 @@ exports.run = function(){
 	view.add(box_user_name);
 	view.add(createDescBox(L('text_desc_username')));
 	
-	var display_height = _requires['util'].getDisplayHeight();
-	
-	var close = _requires['util'].makeLabel({
-		text : 'close',
-		color : 'white',
-		font : {
-			fontFamily : 'Helvetica Neue',
-			fontSize : 15,
-			fontWeight : 'bold'
-		},
-		height : 30,
-		right : 10
-	});
-	var picker_toolbar = Ti.UI.createView({
-		width: '100%',
-		height: (OS_ANDROID)? 50: 40,
-		backgroundColor: '#e54353'
-	});
-	picker_toolbar.add(close);
-	
-	var currencies = _requires['util'].createTableList({
-		backgroundColor: 'white',
-		width: '100%', height: 350,
-		top:0,
-		rowHeight: 50
-	});
-	currencies.addEventListener('click', setCurrency);
-	var picker1 = _requires['util'].group({
-		"toolbar": picker_toolbar,
-		"picker": currencies
-	}, 'vertical');
-	if(OS_ANDROID) picker1.top = display_height;
-	else picker1.bottom = -390;
-	
-	close.addEventListener('click',function() {
-		picker1.animate(slide_out);
-	});
-	
-	theWindow.add(picker1);
-	
-	function addCurrencies() {
-		var tikers = globals.tiker;
-		currenciesArray = [];
-		Titanium.API.log(tikers);
-		currencies.setRowDesign(tikers, function(row, val) { //why is key visible here?
-			if( key !== 'XCP' ) {
-				currenciesArray.push(key);
-				var label = Ti.UI.createLabel({
-					text : key,
-					font : {
-						fontFamily : 'HelveticaNeue-Light',
-						fontSize : 20,
-						fontWeight : 'normal'
-					},
-					color : 'black',
-					width : 'auto',
-					height : 'auto',
-					left :10
-				});
-				row.add(label);
-				return row;
-			}
-		});
-	};
-	
-	addCurrencies();
-	var slide_in;
-	var slide_out;
-	if( OS_ANDROID ){
-		slide_in = Ti.UI.createAnimation({top: display_height - 400, duration:200});
-		slide_out = Ti.UI.createAnimation({top: display_height, duration:200});
-	}
-	else {
-		slide_in = Ti.UI.createAnimation({bottom: 0, duration:200});
-		slide_out = Ti.UI.createAnimation({bottom: -390, duration:200});
-	}
-
-	var box_currency = createBox({ icon: 'icon_settings_currency.png', height: 45 });
-	box_currency.top = 10;
-	view.add(box_currency);
-	view.add(createDescBox(L('text_desc_fiat')));
-	
-	var current_currency = _requires['cache'].data.currncy;
-	var label_current = _requires['util'].makeLabel({
-		text: current_currency,
-		font:{ fontSize: 15 },
-		left: 60
-	});
-	box_currency.add(label_current);
-
-	box_currency.addEventListener('click', function(){
-		addCurrencies();
-		picker1.animate(slide_in);
-	
-	});
-	
-	function setCurrency(e) {
-		var selected_currency = currenciesArray[e.index];
-		//Titanium.API.log(selected_currency);
-		label_current.text = _requires['cache'].data.currncy = selected_currency;
-		globals.loadBalance();
-		if( globals.getOrders != null ) globals.getOrders();
-		_requires['cache'].save();
-		picker1.animate(slide_out);
-	}
 	var box_passphrase = createBox({ icon: 'icon_settings_password.png', height: 45 });
 	box_passphrase.top = 10;
 	view.add(box_passphrase);
@@ -269,7 +174,7 @@ exports.run = function(){
 			buttonNames: [L('label_close'), L('label_show')]
 		});
 		dialog.addEventListener('click', function(e){
-			if( e.index == 1 ){
+			if( e.index != e.source.cancel ){
 				_requires['auth'].check({ title: L('text_confirmsend'), callback: function(e){
 					if( e.success ){
 						var time = (OS_ANDROID)? 1000: 1;
@@ -280,7 +185,7 @@ exports.run = function(){
 								buttonNames: [L('label_close'), L('label_copy')]
 							});
 							dialog2.addEventListener('click', function(e){
-								if( e.index == 1 ){
+								if( e.index != e.source.cancel ){
 									Ti.UI.Clipboard.setText( _requires['cache'].data.passphrase );
 									_requires['util'].createDialog({
 										title: L('label_copied'),
@@ -323,7 +228,7 @@ exports.run = function(){
 			});
 			dialog.addEventListener('click', function(e){
 				
-				if( e.index == 1){
+				if( e.index != e.source.cancel){
 					_requires['auth'].checkPasscode({
 						title : L('label_confirmorder'),
 						callback : function(e) {
@@ -399,7 +304,7 @@ exports.run = function(){
 				_requires['auth'].useTouchID({ callback: function(e){
 					if( e.success ){
 						var easyInput = _requires['util'].createEasyInput({
-							win: theWindow.origin,
+							win: win.origin,
 							type: 'reconfirm',
 							callback: function( number ){
 								_requires['cache'].data.easypass = number;
@@ -451,10 +356,10 @@ exports.run = function(){
 				var dialog2 = _requires['util'].createDialog({
 					title: L('text_review_title'),
 					message: L('text_review'),
-					buttonNames: [L('text_review_yes'), L('text_review_no')]
+					buttonNames: [L('text_review_no'), L('text_review_yes')]
 				});
 				dialog2.addEventListener('click', function(e){
-					if( e.index == 0 ){
+					if( e.index != e.source.cancel ){
 						var url = (OS_IOS)? 'itms-apps://itunes.apple.com/WebObjects/MZStore.woa/wa/viewContentsUserReviews?type=Purple+Software&id=977972108': 'market://details?id=inc.lireneosoft.counterparty';
 						Ti.Platform.openURL(url);
 					}
@@ -495,7 +400,7 @@ exports.run = function(){
 			buttonNames: [L('label_close'), L('label_copy')]
 		});
 		dialog.addEventListener('click', function(e){
-			if( e.index == 1 ){
+			if( e.index != e.source.cancel ){
 				Ti.UI.Clipboard.setText( _requires['cache'].data.id );
 				_requires['util'].createDialog({
 					title: L('label_copied'),
@@ -530,7 +435,7 @@ exports.run = function(){
 			buttonNames: [L('label_close'), L('label_show')]
 		});
 		dialog.addEventListener('click', function(e){
-			if( e.index == 1 ){
+			if( e.index != e.source.cancel ){
 				_requires['auth'].check({ title: L('text_confirmsend'), callback: function(e){
 					if( e.success ){
 						var time = (OS_ANDROID)? 1000: 1;
@@ -541,7 +446,7 @@ exports.run = function(){
 								buttonNames: [L('label_close'), L('label_copy')]
 							});
 							dialog2.addEventListener('click', function(e){
-								if( e.index == 1 ){
+								if( e.index != e.source.cancel ){
 									Ti.UI.Clipboard.setText( _requires['cache'].data.password );
 									_requires['util'].createDialog({
 										title: L('label_copied'),
@@ -558,28 +463,7 @@ exports.run = function(){
 		});
 		dialog.show();
 	});
-	
-	var box_linkage = createBox({ icon: 'icon_settings_linkage.png', height: 45 });
-	box_linkage.top = 10;
-	var label_linkage = _requires['util'].makeLabel({
-		text: L('label_linkage'),
-		font:{ fontSize: 14 },
-		left: 60
-	});
-	box_linkage.add( label_linkage );
-	view.add( box_linkage );
-	view.add(createDescBox(L('text_desc_linkage')));
-	
-	box_linkage.addEventListener('click', function(){
-		
-		_requires['util'].openScanner({
-			'callback': function(e){
-				var str = e.barcode;
-				globals._parseArguments(str, true);
-			}
-		});
-		
-	});
+
 	
 	var section = _requires['util'].makeLabel({
 		text: L('text_section_other'),
@@ -607,27 +491,6 @@ exports.run = function(){
 	
 	});
 	
-	var box_support = createBox({ icon: 'icon_settings_support.png', height: 45 });
-	box_support.top = 10;
-	var label_support = _requires['util'].makeLabel({
-		text: L('label_support'),
-		font:{ fontSize: 14 },
-		left: 60
-	});
-	box_support.add(label_support);
-	view.add(box_support);
-	box_support.addEventListener('click', function(){
-		
-		var dialog = _requires['util'].createDialog({
-			title: L('text_support_title'),
-			message: L('text_support'),
-			buttonNames: [L('text_support_yes'), L('text_review_no')]
-		});
-		dialog.addEventListener('click', function(e){
-			if( e.index == 0 ) createMailDialog();
-		});
-		dialog.show();
-	});
 	
 	var box_signout = createBox({ icon: 'icon_settings_signout.png', height: 45 });
 	box_signout.top = 10;
@@ -646,11 +509,11 @@ exports.run = function(){
 			buttonNames: [L('label_cancel'), L('label_ok')]
 		});
 		dialog.addEventListener('click', function(e){
-			if( e.index == 1 ){
+			if( e.index != e.source.cancel ){
 				_requires['cache'].init();
 				_requires['cache'].load();
-				globals.tabGroup.closeAllTab();
 				if( globals.timer_shapshiftupdate != null ) clearInterval(globals.timer_shapshiftupdate);
+				win.close();
 				_windows['login'].run();
 			}
 		});
@@ -658,5 +521,7 @@ exports.run = function(){
 	});
 	
 	Ti.API.settingsLoad = 'YES';
+	if(OS_IOS) Ti.API.home_tab.open(win.origin,{ animated:true });
+	if(OS_ANDROID) win.origin.open({ animated:true });
+	return win.origin;
 };
-Ti.API.settings_win = theWindow;

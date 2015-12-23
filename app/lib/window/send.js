@@ -402,7 +402,7 @@ exports.run = function( params ){
 	fith_row.add(zero_button);
 	
 	var back_button = Ti.UI.createButton({
-         backgroundColor : "transparent",
+        backgroundColor : "transparent",
         title : 'DEL',
         color:'#e54353',
         right:0,
@@ -529,87 +529,14 @@ exports.run = function( params ){
 	box_address.width = '100%';
 	box_address.height = 50;
 	box_address.backgroundColor = 'white';
+
 	
 	var box_desc_address = _requires['util'].group();
 	box_desc_address.top = 130;
 	box_desc_address.width = '100%';
 	
-	function setValues( vals ){
+	function send(){
 		
-		if( vals.asset != null && vals.asset != params.asset ){
-			var send_token = null;
-			for( var i = 0; i < globals.balances.length; i++ ){
-				if( globals.balances[i].asset === vals.asset ){
-					send_token = globals.balances[i];
-					break;
-				}
-			}
-			if( send_token != null ){
-				var data = {
-					'asset': send_token.asset,
-					'balance': send_token.balance,
-					'fiat': globals.requires['tiker'].to(send_token.asset, send_token.balance, globals.requires['cache'].data.currncy),
-					'address': vals.address,
-					'amount': vals.amount,
-					'currency': vals.currency
-				};
-				globals.windows['send'].run(data);
-			}
-			else{
-				_requires['util'].createDialog({
-					message: L('label_errortokenfound').format({'token': vals.asset}),
-					buttonNames: [L('label_close')]
-				}).show();
-			}
-		}
-		else{
-			if( vals.currency != null ){
-				vals.extras = { 'currency': vals.currency };
-			}
-			
-			if( vals.address != null ){
-				recipient.value = vals.address.toString();
-				
-				if( vals.extras != null && vals.extras.currency != null ){
-					if( is_fiatvalue && _requires['tiker'].isAvailable(vals.extras.currency) ){
-						if( top_field == token_amount_field ) switch_inputs();
-						if( _requires['cache'].data.currncy != vals.extras.currency ){
-							vals.amount = _requires['tiker'].swapCurrency({
-								'from': vals.extras.currency,
-								'to': _requires['cache'].data.currncy,
-								'amount': vals.amount
-							});
-						}
-					}
-					else vals.amount = 0;
-				}
-				else{
-					if( top_field != token_amount_field ) switch_inputs();
-				}
-				
-				if( vals.amount != null ){
-					updateFields( null );
-					updateFields( vals.amount );
-				}
-			}
-		}
-		if( vals.message != null ){
-			_requires['util'].createDialog({
-				title: L('text_withmessage'),
-				message: vals.message,
-				buttonNames: [L('label_close')]
-			}).show();
-		}
-	}
-	setValues(params);
-	
-	function readQR(){
-		_requires['util'].readQRcode({
-			callback: setValues
-		});
-	}
-	
-	send_button.addEventListener('touchstart', function(){
 		var result = null;
 		var send_text = token_amount_field.attributedString.text;
 		var to_send_amount = send_text.replace(' '+params.asset,'');
@@ -630,13 +557,25 @@ exports.run = function( params ){
 			{ name: L('label_destination'), type: 'address', target: recipient, over: 0 }
 		));
 		if( (result = _requires['inputverify'].check()) == true ){
-			var dialog = _requires['util'].createDialog({
-				title: L('label_confirm'),
-				message: L('text_sendconfirmation').format( { 'address': recipient.value, 'amount': temp_field.value, 'token':params.asset })+' '+L('label_fee') + ' 0.0001543 BTC',
-				buttonNames: [L('label_cancel'), L('label_ok')]
-			});
+			
+			var fiat_conf = fiat_amount_field.text;
+			
+			if( OS_ANDROID ){
+				var dialog = _requires['util'].createDialog({
+					title: L('label_confirm'),
+					message: L('text_sendconfirmation').format( { 'address': recipient.value, 'amount': temp_field.value, 'token':params.asset, 'amount2': fiat_conf, })+' '+L('label_fee') + ' 0.0001543 BTC',
+					buttonNames: [L('label_cancel'), L('label_ok')]
+				});
+			}
+			else{
+				var dialog = _requires['util'].createDialog({
+					title: L('label_confirm'),
+					message: L('text_sendconfirmation').format( { 'address': recipient.value, 'amount': temp_field.value, 'token':params.asset, 'amount2': fiat_conf })+' '+L('label_fee') + ' 0.0001543 BTC',
+					buttonNames: [L('label_cancel'), L('label_ok')]
+				});
+			}
 			dialog.addEventListener('click', function(e){
-				if( e.index == 1 ){
+				if( e.index != e.source.cancel ){
 					_requires['auth'].check({ title: L('text_confirmsend'), callback: function(e){
 						if( e.success ){
 							
@@ -645,12 +584,15 @@ exports.run = function( params ){
 								'method': 'create_send',
 								'post': {
 									id: _requires['cache'].data.id,
+									address: _requires['cache'].data.address,
 									asset: params.asset,
 									destination: recipient.value,
 									quantity: temp_field.value
 								},
 								'callback': function( result ){
 									_requires['bitcore'].sign(result.unsigned_hex, {
+										'address': _requires['cache'].data.address,
+										'destination': recipient.value,
 										'callback': function(signed_tx){
 											_requires['network'].connect({
 												'method': 'sendrawtransaction',
@@ -665,6 +607,7 @@ exports.run = function( params ){
 														buttonNames: [L('label_close')]
 													});
 													dialog.addEventListener('click', function(e){
+														globals.loadBalance(true);
 														win.close();
 													});
 													dialog.show();
@@ -673,14 +616,13 @@ exports.run = function( params ){
 														'method': 'acs_push',
 														'post': {
 															id: _requires['cache'].data.id,
-															acs_key: Alloy.CFG.acs_key,
 															type: 'send',
 															asset: params.asset,
 															destination: recipient.value,
 															quantity:temp_field.value
 														},
 														'callback': function( result ){
-															Ti.API.info(JSON.stringify(result));
+															Ti.API.log(JSON.stringify(result));
 														},
 														'onError': function(error){
 															Ti.API.info(error);
@@ -722,8 +664,100 @@ exports.run = function( params ){
 			});
 			dialog.show();
 		}
+	}
+	
+	function setValues( vals ){
+		if( vals.asset != null && vals.asset != params.asset ){
+			var send_token = null;
+			for( var i = 0; i < globals.balances.length; i++ ){
+				if( globals.balances[i].asset === vals.asset ){
+					send_token = globals.balances[i];
+					break;
+				}
+			}
+			if( send_token != null ){
+				var data = {
+					'asset': send_token.asset,
+					'balance': send_token.balance,
+					'fiat': globals.requires['tiker'].to(send_token.asset, send_token.balance, globals.requires['cache'].data.currncy),
+					'address': vals.address,
+					'amount': vals.amount,
+					'currency': vals.currency
+				};
+				//gl
+				box_address.address.value = vals.address;
+				//gobals.windows['send'].run(data);
+			}
+			else{
+				_requires['util'].createDialog({
+					message: L('label_errortokenfound').format({'token': vals.asset}),
+					buttonNames: [L('label_close')]
+				}).show();
+			}
+		}
+		else{
+			if( vals.currency != null ){
+				vals.extras = { 'currency': vals.currency };
+			}
+			
+			if( vals.address != null ){
+				recipient.value = vals.address.toString();
+				
+				if( vals.extras != null && vals.extras.currency != null ){
+					if( is_fiatvalue && _requires['tiker'].isAvailable(vals.extras.currency) ){
+						if( top_field == token_amount_field ) switch_inputs();
+						if( _requires['cache'].data.currncy != vals.extras.currency ){
+							vals.amount = _requires['tiker'].swapCurrency({
+								'from': vals.extras.currency,
+								'to': _requires['cache'].data.currncy,
+								'amount': vals.amount
+							});
+						}
+					}
+				}
+				else{
+					if( top_field != token_amount_field ) switch_inputs();
+				}
+				
+				if( vals.amount != null ){
+					updateFields( null );
+					updateFields( vals.amount );
+				}
+			}
+		}
+		
+		var send_text = token_amount_field.attributedString.text;
+		var to_send_amount = send_text.replace(' '+params.asset,'');
+		
+		if( to_send_amount > 0 && recipient.value.length > 0 ) send();
+	}
+	
+	function sendTip(){
+		top_field = fiat_amount_field;
+			
+		token_amount_field.font = { fontSize:20, fontWeight:'normal' };
+		fiat_amount_field.font = { fontSize:40, fontWeight:'normal' };
+		
+		token_amount_field.top = 110;
+		fiat_amount_field.top = 60;
+		updateFields(fiat_amount_field.text);
+		send();
+	}
+	
+	function readQR(){
+		_requires['util'].readQRcode({
+			callback: setValues
+		});
+	}
+	
+	send_button.addEventListener('touchstart', function(){
+		send();
 	});
 	
-	Ti.API.home_tab.open(win.origin,{ animated:true });
+	if(OS_IOS) Ti.API.home_tab.open(win.origin,{ animated:true });
+	if(OS_ANDROID) win.origin.open({ animated:true });
+	
+	setValues(params);
+	
 	return win.origin;
 };
