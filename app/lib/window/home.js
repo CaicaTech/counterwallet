@@ -468,6 +468,7 @@ exports.run = function() {
 
 
 	
+<<<<<<< HEAD
 	var home_title_center = _requires['util'].makeLabel({
 		text : L('label_tab_home'),
 		color : "white",
@@ -479,6 +480,34 @@ exports.run = function() {
 		top : 28,
 		center : 0
 	});
+=======
+	home_title_center = _requires['util'].makeLabel({
+		text:L('label_tab_home'),
+		color:"white",
+		font:{ fontSize:20, fontWeight:'normal'},
+		textAlign: 'center',
+		top: 25, center: 0
+	});
+	top_bar.add( home_title_center );
+	
+	var home_title_right = _requires['util'].group({
+		'home_scroll_right_img': _requires['util'].makeImage({
+		    image: '/images/img_qrcode_white.png',
+		    height: 30,
+		    top: 0, right: 0
+		}),
+		'home_title_right': _requires['util'].makeLabel({
+			text:L('label_tab_receive'),
+			color:"white",
+			font:{ fontSize: 15, fontWeight:'normal'},
+			textAlign: 'right',
+			top: 3, right: 0
+		})
+	}, 'vertical');
+	home_title_right.right = 10;
+	home_title_right.bottom = 5;
+	top_bar.add( home_title_right );
+>>>>>>> 09b284b6f1caa214b926904734b42bdc6b9cb212
 	
 	home_title_center.text = getTagForAddress(_requires['cache'].data.address);
 					
@@ -512,7 +541,6 @@ exports.run = function() {
 		height : display_height - 141,
 		opacity : 1
 	});
-
 	wallet_view.top = display_height * -1;
 
 

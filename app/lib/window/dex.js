@@ -601,11 +601,9 @@
 		});
 		
 		amount_dex_field.addEventListener('focus', function() {
-			
 	        amount_dex_field_focus = true;
 	    });
-	     amount_dex_field.addEventListener('blur', function() {
-	     	
+	    amount_dex_field.addEventListener('blur', function() {
 	        amount_dex_field_focus = false;
 	    });
 		amount_dex_field.addEventListener('change', function(e) {
@@ -965,7 +963,6 @@
 				addingTokens = false;
 			}
 		};
-		
 		buySellTokens.addEventListener('click', selectToken);
 	
 		box1_range.addEventListener('touchstart', function() {
