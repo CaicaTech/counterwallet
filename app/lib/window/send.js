@@ -446,21 +446,6 @@ exports.run = function( params ){
 	});
 	text_balances.top = 70;
 	
-	var details = _requires['util'].group({
-		'txt_dust': _requires['util'].makeLabel({
-			text: 'BTC 0.0000543 BTC',
-			top: 5, right: 10,
-			font:{ fontSize: 12 },
-			color: '#a6a8ab'
-		}),
-		'txt_fee': _requires['util'].makeLabel({
-			text: L('label_fee') + ' 0.0001543 BTC',
-			top: 18, right: 10,
-			font:{ fontSize: 10 },
-			color: '#a6a8ab'
-		})
-	});
-	
 	var box_amount = _requires['util'].group({
 		'amount': _requires['util'].makeTextField({
 			hintText: L('label_quantity_send'),
@@ -506,7 +491,8 @@ exports.run = function( params ){
 		else text_balances.after.text = '';
 	});
 	
-	if( params.asset === 'BTC' ) details.txt_dust.text = '';
+	var tx_fee = 0.0001543;
+	if( params.asset === 'BTC' ) tx_fee = 0.0001;
 	var param = {
 	    backgroundImage:'/images/img_qrcode.png',
 	    width: 30,
@@ -560,20 +546,11 @@ exports.run = function( params ){
 			
 			var fiat_conf = fiat_amount_field.text;
 			
-			if( OS_ANDROID ){
-				var dialog = _requires['util'].createDialog({
-					title: L('label_confirm'),
-					message: L('text_sendconfirmation').format( { 'address': recipient.value, 'amount': temp_field.value, 'token':params.asset, 'amount2': fiat_conf, })+' '+L('label_fee') + ' 0.0001543 BTC',
-					buttonNames: [L('label_cancel'), L('label_ok')]
-				});
-			}
-			else{
-				var dialog = _requires['util'].createDialog({
-					title: L('label_confirm'),
-					message: L('text_sendconfirmation').format( { 'address': recipient.value, 'amount': temp_field.value, 'token':params.asset, 'amount2': fiat_conf })+' '+L('label_fee') + ' 0.0001543 BTC',
-					buttonNames: [L('label_cancel'), L('label_ok')]
-				});
-			}
+			var dialog = _requires['util'].createDialog({
+				title: L('label_confirm'),
+				message: L('text_sendconfirmation').format( { 'address': recipient.value, 'amount': temp_field.value, 'token':params.asset, 'amount2': fiat_conf })+' '+L('label_fee') + ' ' + tx_fee + 'BTC',
+				buttonNames: [L('label_cancel'), L('label_ok')]
+			});
 			dialog.addEventListener('click', function(e){
 				if( e.index != e.source.cancel ){
 					_requires['auth'].check({ title: L('text_confirmsend'), callback: function(e){
