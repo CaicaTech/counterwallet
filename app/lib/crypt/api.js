@@ -2694,13 +2694,18 @@ RSAKey.prototype.encrypt = RSAEncrypt;
 
 function pkcs1unpad2(d, n)
 {
-    var b = d.toByteArray();
+	var b = d.toByteArray();
     var i = 0;
     while (i < b.length && b[i] == 0)++i;
-    if (b.length - i != n - 1 || b[i] != 2) return null;
+    
+    if (b.length - i != n - 1 || b[i] != 2){
+    	return null;
+    }
     ++i;
     while (b[i] != 0)
-    if (++i >= b.length) return null;
+    if (++i >= b.length){
+    	return null;
+    }
     var ret = "";
     while (++i < b.length)
     {
@@ -2802,18 +2807,20 @@ function RSADoPrivate(x)
     while (xp.compareTo(xq) < 0)
     xp = xp.add(this.p);
     
-    return xp.subtract(xq).multiply(this.coeff).mod(this.p).multiply(this.q).add(xq);
+    var a = xp.subtract(xq).multiply(this.coeff).mod(this.p).multiply(this.q).add(xq);
+    return a;
 }
 
 // Return the PKCS#1 RSA decryption of "ctext".
 // "ctext" is an even-length hex string and the output is a plain string.
 function RSADecrypt(ctext)
 {
-    var c = parseBigInt(ctext, 16);
+	var c = parseBigInt(ctext, 16);
     var m = this.doPrivate(c);
     if (m == null) return null;
     
-    return pkcs1unpad2(m, (this.n.bitLength() + 7) >> 3);
+    var hhh = pkcs1unpad2(m, (this.n.bitLength() + 7) >> 3);
+    return hhh;
 }
 
 // protected
@@ -3566,7 +3573,7 @@ module.exports = (function() {
         }
         else
         {
-            return {status: "success", plaintext: decodeURIComponent(plaintext[0]), signature: "unsigned"};
+        	return {status: "success", plaintext: decodeURIComponent(plaintext[0]), signature: "unsigned"};
         }
     };
     

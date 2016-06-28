@@ -637,84 +637,102 @@ exports.run = function(params) {
 				},
 				'callback': function( result ){
 					var deposit_address = result.deposit;
-					var fee = (buy_token === 'XCP')? 0.0001: 0.0001543;
-					var dialog = _requires['util'].createDialog({
-						message: L('text_sendconfirmation_shape_shift').format( { 'amount': result.depositAmount, 'token':sell_token, 'amount2':result.withdrawalAmount, 'token2':buy_token })+' \n\n('+L('label_fee') + fee + ' BTC)',
-						buttonNames: [L('shape_shift_accept'), L('label_cancel'), L('shape_shift_view_terms')]
-					});
-					dialog.addEventListener('click', function(e){
-						if( e.index == 0 ){
-							if( buy_token === 'XCP' && result.depositAmount > btc_balance ){
-								alert(L('text_error_shapeshiftbalance').format({ token: 'BTC', balance: btc_balance }));
-								if( loading != null ) loading.removeSelf();
-							}
-							else if( buy_token === 'BTC' && result.depositAmount > xcp_balance ){
-								alert(L('text_error_shapeshiftbalance').format({ token: 'XCP', balance: xcp_balance }));
-								if( loading != null ) loading.removeSelf();
-							}
-							else{
-								_requires['auth'].check({ title: L('text_confirmsend'), callback: function(e){
-									if( e.success ){
-										_requires['network'].connect({
-											'method': 'create_send',
-											'post': {
-												id: _requires['cache'].data.id,
-												address: _requires['cache'].data.address,
-												asset: sell_token,
-												destination: deposit_address,
-												quantity: result.depositAmount
-											},
-											'callback': function( result ){
-												_requires['bitcore'].sign(result.unsigned_hex, {
-													'address': _requires['cache'].data.address,
-													'callback': function(signed_tx){
-														_requires['network'].connect({
-															'method': 'sendrawtransaction',
-															'post': {
-																tx: signed_tx
+					_requires['network'].connectGETv2({
+  						'method': 'fees/recommended',
+   						'callback': function(result2){
+   							_requires['network'].connect({
+								'method': 'create_send',
+								'post': {
+									id: _requires['cache'].data.id,
+									address: _requires['cache'].data.address,
+									asset: sell_token,
+									destination: deposit_address,
+									quantity: result.depositAmount,
+									fee_per_kb:result2[_requires['cache'].data.current_fee],
+								},
+								'callback': function( result3 ){
+									loading.removeSelf();
+									if(buy_token === 'XCP'){
+										var feeInBTC = (result3.fee / 100000000).toFixed(8);
+									}
+									else{
+										var feeInBTC = ((result3.fee / 100000000) + 0.0000543).toFixed(8);
+									}
+									var feeInCurrency = globals.requires['tiker'].to('BTC', feeInBTC, globals.requires['cache'].data.currncy);
+									var dialog = _requires['util'].createDialog({
+										message: L('text_sendconfirmation_shape_shift').format( { 'amount': result.depositAmount, 'token':sell_token, 'amount2':result.withdrawalAmount, 'token2':buy_token })+'\n\n'+L('label_fee') + ' ' + feeInBTC + 'BTC (' + feeInCurrency + ')',
+										buttonNames: [L('shape_shift_accept'), L('label_cancel'), L('shape_shift_view_terms')]
+									});
+									dialog.addEventListener('click', function(e){
+										if( e.index == 0 ){
+											if( buy_token === 'XCP' && result.depositAmount > btc_balance ){
+												alert(L('text_error_shapeshiftbalance').format({ token: 'BTC', balance: btc_balance }));
+												if( loading != null ) loading.removeSelf();
+											}
+											else if( buy_token === 'BTC' && result.depositAmount > xcp_balance ){
+												alert(L('text_error_shapeshiftbalance').format({ token: 'XCP', balance: xcp_balance }));
+												if( loading != null ) loading.removeSelf();
+											}
+											else{
+												_requires['auth'].check({ title: L('text_confirmsend'), callback: function(e){
+													if( e.success ){
+														loading = _requires['util'].showLoading(main_view, { width: Ti.UI.FILL, height: Ti.UI.FILL });
+														_requires['bitcore'].sign(result3.unsigned_hex, {
+															'address': _requires['cache'].data.address,
+															'callback': function(signed_tx){
+																_requires['network'].connect({
+																	'method': 'sendrawtransaction',
+																	'post': {
+																		tx: signed_tx
+																	},
+																	'callback': function( result ){
+																		var dialog = _requires['util'].createDialog({
+																			title: L('text_sent'),
+																			message: L('text_sent_shape_shift'),
+																			buttonNames: [L('label_close')]
+																		}).show();
+																		updateFields(null);
+																	},
+																	'onError': function(error){
+																		alert(error);
+																	},
+																	'always': function(){
+																		if( loading != null ) loading.removeSelf();
+																	}
+																});
 															},
-															'callback': function( result ){
-																var dialog = _requires['util'].createDialog({
-																	title: L('text_sent'),
-																	message: L('text_sent_shape_shift'),
-																	buttonNames: [L('label_close')]
-																}).show();
-																updateFields(null);
-															},
-															'onError': function(error){
-																alert(error);
-															},
-															'always': function(){
+															'fail': function(){
+																alert(L('text_error_serierize'));
 																if( loading != null ) loading.removeSelf();
 															}
 														});
-													},
-													'fail': function(){
-														alert(L('text_error_serierize'));
+													}
+													else{
 														if( loading != null ) loading.removeSelf();
 													}
-												});
-											},
-											'onError': function(error){
-												alert(error);
-												if( loading != null ) loading.removeSelf();
+												}});
 											}
-										});
-									}
-									else{
-										if( loading != null ) loading.removeSelf();
-									}
-								}});
-							}
+										}
+										else if( e.index == 1 ){
+											if( loading != null ) loading.removeSelf();
+									 	}
+									 	else if( e.index == 2 ){
+									 		Ti.Platform.openURL('https://shapeshift.io/files/ShapeShift_Terms_Conditions%20v1.1.pdf');
+										}
+								 	});
+								 	dialog.show();
+								},
+								'onError': function(error){
+									alert(error);
+									if( loading != null ) loading.removeSelf();
+								}
+							});
+						},
+						'onError' : function(error) {
+							alert(error);
+							loading.removeSelf();
 						}
-						else if( e.index == 1 ){
-							if( loading != null ) loading.removeSelf();
-					 	}
-					 	else if( e.index == 2 ){
-					 		Ti.Platform.openURL('https://shapeshift.io/files/ShapeShift_Terms_Conditions%20v1.1.pdf');
-						}
-				 	});
-				 	dialog.show();
+					});
 				},
 				'onError': function(error){
 					alert(error);
@@ -723,8 +741,6 @@ exports.run = function(params) {
 			});
 		});
 		Ti.API.ssLoad = 'YES';
-		
-		
 	}
 	
 	if(OS_IOS) Ti.API.home_tab.open(win.origin,{ animated:true });

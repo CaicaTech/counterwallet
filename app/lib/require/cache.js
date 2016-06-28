@@ -6,7 +6,6 @@ module.exports = (function() {
 		if( OS_ANDROID ){
 			var newDir = Ti.Filesystem.getFile(Ti.Filesystem.applicationDataDirectory, 'save');
 			if( !newDir.exists() ) newDir.createDirectory();
-			
 			var file = Ti.Filesystem.getFile(newDir.nativePath, 'save_file.json');
 			if( !file.exists() ) file.write('');
 			
@@ -14,6 +13,7 @@ module.exports = (function() {
 		}
 		else return globals.SAVE_FILE_PATH;
 	}
+	self.getPath = getPath;
 	
 	function getRSAPath(){
 		if( OS_ANDROID ){
@@ -27,6 +27,7 @@ module.exports = (function() {
 		}
 		else return globals.CRYPT_FILE_PATH;
 	}
+	self.getRSAPath = getRSAPath;
 	
 	function getData(){
 		var f = Ti.Filesystem.getFile( getPath() );
@@ -34,14 +35,15 @@ module.exports = (function() {
 		
 		if ( !data || data.length <= 0 ) data = '{}';
 		else{
-			var rsa_info = self.load_rsa();
-			var RSAkey = (globals.Crypt_key == null)? (globals.Crypt_key = crypt.loadRSAkey(rsa_info.a)): globals.Crypt_key;
 			try{
+				var rsa_info = self.load_rsa();
+				var RSAkey = (globals.Crypt_key == null)? (globals.Crypt_key = crypt.loadRSAkey(rsa_info.a)): globals.Crypt_key;
 				var DecryptionResult = crypt.decrypt(data.toString(), RSAkey);
 				data = DecryptionResult.plaintext;
+				
+				if( self.checkExists() && (data == undefined || data.length <= 0) ) throw new Error('');
 			}
 			catch(e){
-				Ti.API.info(e);
 				throw new Error('*** Access deny.');
 			}
 		}
@@ -52,10 +54,10 @@ module.exports = (function() {
 	
 	self.init = function(){
 		var f = Ti.Filesystem.getFile( getPath() );
-	    f.write('');
+	    if( f.exists() ) f.deleteFile();
 	    
 	    var f2 = Ti.Filesystem.getFile( getRSAPath() );
-	    f2.write('');
+	    if( f2.exists() ) f2.deleteFile();
 	    
 	    var f3 = Ti.Filesystem.getFile(Ti.Filesystem.applicationDataDirectory, 'qr_address.png');
 		if( f3.exists() ) f3.deleteFile();
@@ -66,17 +68,43 @@ module.exports = (function() {
 	};
 	
 	self.load_rsa = function(){
-		var f  = Ti.Filesystem.getFile( getRSAPath() );
-			
+		var f = Ti.Filesystem.getFile( getRSAPath() );
+		
 		var json = f.read();
 		if ( !json || json.length <= 0 ) json = '{}';
 		
 		return JSON.parse(json);
 	};
 	
+	self.checkExists = function(){
+		var exists = false;
+		if( OS_ANDROID ){
+			var f = false;
+			var newDir = Ti.Filesystem.getFile(Ti.Filesystem.applicationDataDirectory, 'save');
+			if( newDir.exists() ){
+				var file = Ti.Filesystem.getFile(newDir.nativePath, 'save_file.json');
+				if( file.exists() ) f = true;
+			}
+			var f2 = false;
+			var newDir = Ti.Filesystem.getFile(Ti.Filesystem.applicationDataDirectory, 'jithd');
+			if( newDir.exists() ){
+				var file = Ti.Filesystem.getFile(newDir.nativePath, 'jithd.json');
+				if( !file.exists() ) f2 = true;
+			}
+			return f && f2;
+		}
+		else{
+			var f = Ti.Filesystem.getFile( getPath() );
+			var f2  = Ti.Filesystem.getFile( getRSAPath() );
+			exists = f.exists() && f2.exists();
+		}
+		
+		return exists;
+	};
+	
 	self.save_rsa = function( data ){
 		var f  = Ti.Filesystem.getFile( getRSAPath() );
-	    f.write(JSON.stringify( data ));
+		f.write(JSON.stringify( data ));
 	};
 	
 	self.load = function(){

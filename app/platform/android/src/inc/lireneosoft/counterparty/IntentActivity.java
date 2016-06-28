@@ -21,7 +21,6 @@ public class IntentActivity extends Activity {
         intent.setAction(Intent.ACTION_VIEW);
         intent.putExtra("source", source);
         try{
-            Log.d(TAG, "**** startActivity:"+source);
             startActivity(intent);
         }catch(Exception e){
             Log.d(TAG, "**** e:"+e);
@@ -33,7 +32,6 @@ public class IntentActivity extends Activity {
         super.onCreate(savedInstanceState);
         
         Intent currentIntent = getIntent();
-        
         Bundle extras = currentIntent.getExtras();
         String source = null;
         if( extras != null ) source = extras.getString("source");

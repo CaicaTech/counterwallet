@@ -133,7 +133,7 @@ exports.run = function( params ){
 			width: Ti.UI.FILL, height: 35,
 			left: 15,
 			border: 'hidden',
-			keyboardType: Ti.UI.KEYBOARD_DECIMAL_PAD,
+			keyboardType: Ti.UI.KEYBOARD_TYPE_DECIMAL_PAD,
 		})
 	} });
 	box_quantity.top = 10;
@@ -236,9 +236,48 @@ exports.run = function( params ){
 		
 		if( (result = _requires['inputverify'].check()) == true ){
 			var token = box_token.field.value.toUpperCase();
-			var dialog = _requires['util'].createDialog({
+		
+			var loading = _requires['util'].showLoading(win.origin, { width: Ti.UI.FILL, height: Ti.UI.FILL, message: L('loading_issue')});
+							
+								
+								_requires['network'].connectGETv2({
+					  					'method': 'fees/recommended',
+					   					 'callback': function(result){
+								
+								
+								_requires['network'].connect({
+									'method': 'make_enhancedassetinfo',
+									'post': {
+										asset: token,
+										media: blobImage,
+										description: box_description.field.value,
+										website: box_website.field.value
+									},
+									'callback': function( url ){
+										_requires['network'].connect({
+											'method': 'create_issuance',
+											'post': {
+												id: _requires['cache'].data.id,
+												address: _requires['cache'].data.address,
+												token: token,
+												description: url.uri,
+												quantity: box_quantity.field.value,
+												divisible: sl_divisible.is,
+												fee_per_kb:result[_requires['cache'].data.current_fee],
+											},
+											'callback': function( result ){
+												
+												
+												loading.removeSelf();
+												
+												var feeInBTC = (result.fee / 100000000).toFixed(8);
+									
+									var feeInCurrency = globals.requires['tiker'].to('BTC', feeInBTC, globals.requires['cache'].data.currncy);
+												
+												
+													var dialog = _requires['util'].createDialog({
 				title: L('label_confirm'),
-				message: L('text_confirmIssuance').format( {'token': token, 'quantity': box_quantity.field.value} ),
+				message: L('text_confirmIssuance').format( {'token': token, 'quantity': box_quantity.field.value} )+'\n\n'+L('label_fee') + ' ' + feeInBTC + 'BTC (' + feeInCurrency + ')',
 				buttonNames: [L('label_cancel'), L('label_ok')]
 			});
 			dialog.addEventListener('click', function(e){
@@ -259,27 +298,14 @@ exports.run = function( params ){
 					else{
 						_requires['auth'].check({ title: L('text_createToken'), callback: function(e){
 							if( e.success ){
-								var loading = _requires['util'].showLoading(win.origin, { width: Ti.UI.FILL, height: Ti.UI.FILL, message: L('loading_issue')});
-								_requires['network'].connect({
-									'method': 'make_enhancedassetinfo',
-									'post': {
-										asset: token,
-										media: blobImage,
-										description: box_description.field.value,
-										website: box_website.field.value
-									},
-									'callback': function( url ){
-										_requires['network'].connect({
-											'method': 'create_issuance',
-											'post': {
-												id: _requires['cache'].data.id,
-												address: _requires['cache'].data.address,
-												token: token,
-												description: url.uri,
-												quantity: box_quantity.field.value,
-												divisible: sl_divisible.is
-											},
-											'callback': function( result ){
+							 loading = _requires['util'].showLoading(win.origin, { width: Ti.UI.FILL, height: Ti.UI.FILL, message: L('loading_issue')});
+								
+												
+												
+												
+												
+												
+												
 												_requires['bitcore'].sign(result.unsigned_hex, {
 													'address': _requires['cache'].data.address,
 													'callback': function(signed_tx){
@@ -307,6 +333,22 @@ exports.run = function( params ){
 														loading.removeSelf();
 													}
 												});
+												
+												
+												
+																
+							}
+						}});
+					}
+				}
+			});
+			dialog.show();
+			
+			
+												
+												
+												
+												
 											},
 											'onError': function(error){
 												alert(error);
@@ -319,12 +361,24 @@ exports.run = function( params ){
 										if( loading != null ) loading.removeSelf();
 									}
 								});
-							}
-						}});
-					}
-				}
-			});
-			dialog.show();
+								
+								
+								
+								
+										},
+			'onError' : function(error) {
+				alert(error);
+				loading.removeSelf();
+			}
+		});
+				
+								
+								
+								
+				
+			
+			
+			
 		}
 		else{
 			var dialog = _requires['util'].createDialog({

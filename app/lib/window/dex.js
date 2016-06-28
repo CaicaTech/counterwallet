@@ -17,7 +17,6 @@
 	if(tokenHistory){
 		popular_tokens = popular_tokens.concat(tokenHistory);
 	}
-	
 	search_tokens = [];
 	
 	function addSearchTokens(){
@@ -153,8 +152,29 @@
 			top:0,
 			rowHeight: 60
 		});
+		
+		var orderHistoryList = _requires['util'].createTableList({
+			backgroundColor: 'white',
+			width: '100%', height: (OS_ANDROID)? 350: 200,
+			top:0,
+			rowHeight: 60
+		});
+		orderHistoryList.addEventListener('click', selectRowOrder);
+		//orderHistoryList.addEventListener('pullend',function(e) {getOrderHistory();});
+		
+		var orderHistoryListView = Ti.UI.createView({
+			backgroundColor: 'white',
+			width: '100%', height: (OS_ANDROID)? 350: 200,
+			top:0,
+		});
 	
 		var picker_toolbar = Ti.UI.createView({
+			width: '100%',
+			height: (OS_ANDROID)? 50: 40,
+			backgroundColor: '#e54353'
+		});
+		
+		var picker_toolbar_order = Ti.UI.createView({
 			width: '100%',
 			height: (OS_ANDROID)? 50: 40,
 			backgroundColor: '#e54353'
@@ -165,8 +185,34 @@
 			"picker": buySellTokens
 		}, 'vertical');
 		
+		orderHistoryListView.add(orderHistoryList);
+		var pickerOrder = _requires['util'].group({
+			"toolbar": picker_toolbar_order,
+			"picker": orderHistoryListView
+		}, 'vertical');
+		
+			
+		var orderHistLoading = _requires['util'].makeLabel({
+					text : L('exchange_loading_history'),
+					backgroundColor : "transparent",
+					color : '#9b9b9b',
+					textAlign: 'center',
+					font : {
+						fontFamily : 'Helvetica Neue',
+						fontSize : 12,
+						fontWeight : 'bold'
+					},
+					top:100
+			});
+			
+		orderHistoryListView.add(orderHistLoading);
+	
+		
 		if(OS_ANDROID) picker1.top = display_height;
 		else picker1.bottom = -340;
+		
+		if(OS_ANDROID) pickerOrder.top = display_height;
+		else pickerOrder.bottom = -340;
 		
 		var box1 = _requires['util'].group();
 		box1.height = 35;
@@ -174,7 +220,7 @@
 		box1.backgroundColor = 'white';
 		box1.borderRadius = 4;
 		box1.top = (OS_ANDROID)?10: 30;
-		box1.left = 10;
+		box1.left = 5;
 		top_bar.add(box1);
 		
 		var box1_range = _requires['util'].group();
@@ -193,33 +239,24 @@
 		box1_asset_image.hide();
 		
 		function put_box1(asset_name){
-			if( asset_name === L('label_exchange_select_token') ){
-				var box1_asset_name = _requires['util'].makeLabel({
-					text : asset_name,
-					color : 'black',
-					minimumFontSize : 10,
-					font : { fontFamily : 'Helvetica Neue', fontSize : (OS_ANDROID)? 12: 15, fontWeight : 'normal' },
-					textAlign:'center',
-					width:'100%'
-				});
-			
-			}else{
-				if( asset_name.length > 12 ){
-					asset_name = asset_name.substr(0, 10) + '...';
-				}
-				var box1_asset_name = _requires['util'].makeLabel({
-					text : asset_name,
-					color : 'black',
-					left: 38,
-					width: '70%', top: 5,
-					minimumFontSize : 10,
-					font : { fontFamily: 'Helvetica Neue', fontSize: (OS_ANDROID)? 12: 15, fontWeight: 'normal' },
-					textAlign: 'center'
-				});
+			if( asset_name.length > 12 ){
+				asset_name = asset_name.substr(0, 10) + '...';
 			}
+			var box1_asset_name = _requires['util'].makeLabel({
+				text : asset_name,
+				color : 'black',
+				left: 38,
+				width: '70%', top: 5,
+				minimumFontSize : 10,
+				font : { fontFamily: 'Helvetica Neue', fontSize: (OS_ANDROID)? 12: 15, fontWeight: 'normal' },
+				textAlign: 'center'
+			});
 			box1.add(box1_asset_name);
 			box1.addEventListener('touchstart', function() {
+				pickerOrder.animate(slide_out);
 				picker1.animate(slide_in);
+				darkView.animate(showDarkView);
+				darkView.show();
 				search_tokens = [ {asset: L('label_exchange_getting_tokens') }];
 				
 				setTimeout(function() { addBuySellTokens(); }, 500);
@@ -242,6 +279,9 @@
 				if( OS_ANDROID ){
 					if(picker1.top == display_height){
 						picker1.animate(slide_in);
+						darkView.animate(showDarkView);
+						darkView.show();
+						pickerOrder.animate(slide_out);
 						search_tokens = [ {asset: L('label_exchange_getting_tokens') }];
 						setTimeout(function() { addBuySellTokens(); }, 500);
 					}
@@ -249,6 +289,9 @@
 				else{
 					if(picker1.bottom == -340){
 						picker1.animate(slide_in);
+						darkView.animate(showDarkView);
+						darkView.show();
+						pickerOrder.animate(slide_out);
 						search_tokens = [ {asset: L('label_exchange_getting_tokens') }];
 						setTimeout(function() { addBuySellTokens(); }, 500);
 					}
@@ -257,10 +300,284 @@
 				
 			});
 		top_bar.add(responsiveView);
+		
 		put_box1(L('label_exchange_select_token'));
 		
 		
 	//	addBuySellTokens();
+	
+	function getOrderHistory(){
+		my_order_history = [];
+		
+		orderHistoryList.setData([]);
+		orderHistoryList.removeAllChildren();
+		
+			
+			orderHistLoading.show();
+				
+		_requires['network'].connect({
+					'method' : 'get_order_history',
+					'post' : {
+						id : _requires['cache'].data.id,
+						price_token : 'XCP'
+					},
+					'callback' : function(result) {
+						orderHistLoading.hide();
+						orderHistoryList.removeAllChildren();
+						for( var i = 0; i < result.length; i++ ){
+							var tmphash = result[i]['tx_hash'];
+							if(result[i].status == 'cancelled'){
+								Ti.App.Properties.removeProperty(tmphash);
+							}
+							my_order_history.push(result[i]);
+						}
+						
+						orderHistoryList.setRowDesign(my_order_history, function(row, val) {
+								var token_name = (val.type == 'buy')?val['get_asset']: val['give_asset'];
+								//token_name = val['give_asset'];
+								var token_amount = val.order;
+								var color = '#6db558';
+								if (val.type == 'buy') color = '#e54353';
+								if (market_sell_price == 0) market_sell_price = val.price;
+								
+								var statusdate = _requires['util'].group({
+									'date': _requires['util'].makeLabel({
+										minimumFontSize:6,
+										text : val.date,
+										textAlign : 'right',
+										bottom: 0,
+										color : '#9b9b9b',
+										font : { fontFamily : 'Helvetica Neue', fontSize : 9, fontWeight : 'normal' }
+									})
+								}, 'vertical');
+								
+								statusdate.right = 5;
+								statusdate.bottom = 5;
+								//row.backgroundColor = color;
+								var color = '#6db558';
+								if (val.type == 'buy') color = '#e54353';
+								var imageType = '/images/sellAvatar.png';
+								if (val.type == 'buy') imageType = '/images/buyAvatar.png';
+								
+								var order_amount = _requires['util'].group({
+									'amount_order': _requires['util'].makeLabel({
+										minimumFontSize:6,
+										text : trim2( token_amount ),
+										textAlign : 'left',
+										left : 0,
+										top : 0,
+										color : '#9b9b9b',
+										font : {
+											fontFamily : 'Helvetica Neue',
+											fontSize : 10,
+											fontWeight : 'normal'
+										}
+									}),
+									'amount_token': _requires['util'].makeLabel({
+										minimumFontSize:6,
+										text : token_name,
+										textAlign : 'left',
+										left : 0,
+										top: (OS_ANDROID)? -1: 1,
+										color : '#9b9b9b',
+										font : {
+											fontFamily : 'Helvetica Neue',
+											fontSize : 10,
+											fontWeight : 'normal'
+										}
+									}),
+									'amount_type': _requires['util'].makeLabel({
+										minimumFontSize:6,
+										text : val.type,
+										textAlign : 'left',
+										left : 0,
+										bottom: 5,
+										color : color,
+										font : {
+											fontFamily : 'Helvetica Neue',
+											fontSize : 10,
+											fontWeight : 'bold'
+										}
+									})
+								}, 'vertical');
+								order_amount.left = 5;
+								
+								
+							
+								
+								var fiat_order = _requires['util'].makeLabel({
+									minimumFontSize:6,
+									text : _requires['tiker'].to('XCP', val.price, _requires['cache'].data.currncy, 8),
+									textAlign : 'right',
+									top: 15, left: 0,
+									color : color,
+									font : {
+										fontFamily : 'Helvetica Neue',
+										fontSize : 11,
+										fontWeight : 'normal'
+									}
+								});
+								var display_heightdex = _requires['util'].getDisplayHeight();
+								if(display_heightdex < 700){
+									fiat_order.top = 12;
+								}
+								
+								var trim_price = trim( val.price );
+								//hist
+								var price_order = _requires['util'].makeLabel({
+									minimumFontSize:6,
+									text : trim_price + ' XCP',
+									textAlign : 'right',
+									top : 0, left: 0,
+									color : color,
+									font : {
+										fontFamily : 'Helvetica Neue',
+										fontSize : 11,
+										fontWeight : 'normal'
+									}
+								});
+								
+								var order_prices = _requires['util'].group({
+									'fiat_order': fiat_order,
+									'price_order': price_order
+								});
+								row.add( order_prices );
+								
+								if(fiat_mode == true){
+									price_order.top = 15;
+									fiat_order.top = 0;
+								}
+								//order_prices
+								
+								
+							
+								row.add( order_amount );
+								row.add( statusdate );
+								
+								
+								
+								var cancelingStatus = Ti.App.Properties.getString(val.tx_hash);
+								if(cancelingStatus == 'CANCELING'){
+									
+								var order_canceling_status = _requires['util'].makeLabel({
+									minimumFontSize:6,
+									text :L('label_exchange_canceling'),
+									textAlign : 'right',
+									top : 20, right: 5,
+									color : color,
+									font : {
+										fontFamily : 'Helvetica Neue',
+										fontSize : 11,
+										fontWeight : 'normal'
+									}
+									
+									});
+									row.add( order_canceling_status );
+								}
+								else if(val.status == 'open'){
+									var cancelButton= Ti.UI.createButton({
+	     								   backgroundColor : "#e44450",
+	       								   borderRadius: 4,
+	       								   title :  L('label_order_status_canceled'),
+	       								   color:'white',
+	        							   right:5,
+	      								   width :70,
+	        							   height : 25,
+	        							   top : 10,
+	       								   font:{fontFamily:'Gill Sans', fontSize: (OS_ANDROID)? 9: 11, fontWeight:'light'},
+	       								   minimumFontSize : 7,
+	   									 });
+	    						    row.add( cancelButton );
+									
+								}
+								else if(val.status == 'cancelled'){
+									
+									var order_complete_cancelled = _requires['util'].makeLabel({
+									minimumFontSize:6,
+									text :L('label_exchange_cancelled'),
+									textAlign : 'right',
+									top : 20, right: 5,
+									color : color,
+									font : {
+										fontFamily : 'Helvetica Neue',
+										fontSize : 11,
+										fontWeight : 'normal'
+									}
+								});
+								row.add( order_complete_cancelled );
+									
+									
+								}
+								else if(val.status == 'filled'){
+									
+									
+	    						   var order_complete_status = _requires['util'].makeLabel({
+									minimumFontSize:6,
+									text :L('label_exchange_completed'),
+									textAlign : 'right',
+									top : 20, right: 5,
+									color : color,
+									font : {
+										fontFamily : 'Helvetica Neue',
+										fontSize : 11,
+										fontWeight : 'normal'
+									}
+								});
+								row.add( order_complete_status );
+									
+								}
+								else if(val.status == "expired"){
+									 var order_status_expired = _requires['util'].makeLabel({
+									minimumFontSize:6,
+									text :L('label_exchange_expired'),
+									textAlign : 'right',
+									top : 20, right: 5,
+									color : color,
+									font : {
+										fontFamily : 'Helvetica Neue',
+										fontSize : 11,
+										fontWeight : 'normal'
+									}
+								});
+								row.add( order_status_expired );
+								}
+								else{
+									
+									/*var dashImage = Ti.UI.createImageView({
+										image : '/images/expired_dash.png',
+										width : 10, height : 10,
+										right : 30
+									});
+	    						    row.add( dashImage );*/
+	    						   
+	    						    var order_status_lab = _requires['util'].makeLabel({
+									minimumFontSize:6,
+									text :val.status,
+									textAlign : 'right',
+									top : 20, right: 5,
+									color : color,
+									font : {
+										fontFamily : 'Helvetica Neue',
+										fontSize : 11,
+										fontWeight : 'normal'
+									}
+								});
+								row.add( order_status_lab );
+									
+								}
+								
+								return row;
+							});
+						
+					},
+					'onError' : function(error) {
+						orderHistLoading.hide();
+						alert(error);
+					}
+				});
+		
+	}
+	
 		
 		
 		function getXCPBalance(){
@@ -295,26 +612,44 @@
 		});
 		top_bar.add(token_balance);
 		
-		var helpButton = Ti.UI.createButton({
-	        backgroundColor : "transparent",
-	        title : '?',
-	        width : '20',
-	        height : '30',
-	        color: 'white',
-	        right: 10,
-	        top: (OS_ANDROID)? 13: 33,
-	        font:{fontFamily:'Helvetica Neue', fontSize:20, fontWeight:'normal'},
-	    });
-		helpButton.addEventListener('click', function(e) {
-			var dialog = _requires['util'].createDialog({
-		   		title:L('exchange_how_to_title'),
-				message:L('exchange_tutorial'),
-				buttonNames: ['OK']
-			});
-			dialog.show();	
+		
+		
+	var orderHistoryButton = _requires['util'].group({
+		'order_hist_icon' : _requires['util'].makeImage({
+			image : '/images/icon_history_white.png',
+			width : 30,
+			height : 28
+		}),
+		'order_hist_label' : _requires['util'].makeLabel({
+			text : L('label_order_history'),
+			color : 'white',
+			textAlign : 'center',
+			top:32,
+			font : {
+				fontFamily : 'HelveticaNeue-Light',
+				fontSize : 10,
+				fontWeight : 'normal'
+			}
+		})
+	}, 'verticle');
+	orderHistoryButton.height = 45;
+	orderHistoryButton.right = 5;
+	orderHistoryButton.top = (OS_ANDROID)?0: 20;
+		
+	
+		
+		orderHistoryButton.addEventListener('click', function(e) {
+			getOrderHistory();
+			pickerOrder.animate(slide_in);
+			
+			picker1.animate(slide_out);
+			darkView.animate(showDarkView);
+			darkView.show();
 		});
 		
-		top_bar.add(helpButton);
+		top_bar.add(orderHistoryButton);
+		
+		
 		var ordersLoaded = false;
 		var buySell = _requires['util'].group();
 		buySell.height = 35;
@@ -324,7 +659,7 @@
 		buySell.borderWidth = 1;
 		buySell.borderColor = 'white';
 		buySell.top = (OS_ANDROID)?10: 30;
-		buySell.right = 40;
+		buySell.right = 43;
 		top_bar.add(buySell);
 		
 		var linebreak =  Ti.UI.createView({
@@ -395,6 +730,9 @@
 				put_box1(L('label_exchange_select_token'));
 				hideShowOrders(true);
 				box1_asset_image.hide();
+				darkView.animate(showDarkView);
+				darkView.show();
+				pickerOrder.animate(slide_out);
 				picker1.animate(slide_in);
 				ordersLoaded = false;
 			}else{
@@ -469,7 +807,7 @@
 			left:0,
 			font:{fontFamily:'Helvetica Neue', fontSize:13, fontWeight:'normal'},
 		});
-			
+		
 		var price_label = _requires['util'].makeLabel({
 			color : 'white',
 			text:L('label_exchange_price') + ' XCP',
@@ -491,7 +829,7 @@
 			left:5,
 			font:{fontFamily:'Helvetica Neue', fontSize:13, fontWeight:'normal'},
 		});
-			
+		
 		var amount_token_name = _requires['util'].makeLabel({
 			color : 'white',
 			text: '',
@@ -541,7 +879,7 @@
 			color : 'black',
 			textAlign : 'center',
 			hintText:'',
-			keyboardType : Ti.UI.KEYBOARD_DECIMAL_PAD,
+			keyboardType : Ti.UI.KEYBOARD_TYPE_DECIMAL_PAD,
 			font : { fontFamily : 'Helvetica Neue', fontSize : 13, fontWeight : 'normal' },
 			minimumFontSize : 10,
 			height : (OS_ANDROID)? 35: 25,
@@ -554,7 +892,7 @@
 			color : 'black',
 			textAlign : 'center',
 			hintText:'',
-			keyboardType : Ti.UI.KEYBOARD_DECIMAL_PAD,
+			keyboardType : Ti.UI.KEYBOARD_TYPE_DECIMAL_PAD,
 			font : { fontFamily : 'Helvetica Neue', fontSize : 13, fontWeight : 'normal' },
 			minimumFontSize : 8,
 			height : (OS_ANDROID)? 35: 25,
@@ -567,7 +905,7 @@
 			color : 'black',
 			textAlign : 'center',
 			hintText:'',
-			keyboardType : Ti.UI.KEYBOARD_DECIMAL_PAD,
+			keyboardType : Ti.UI.KEYBOARD_TYPE_DECIMAL_PAD,
 			font : { fontFamily : 'Helvetica Neue', fontSize : 13, fontWeight : 'normal' },
 			minimumFontSize : 8,
 			height : (OS_ANDROID)? 35: 25,
@@ -601,9 +939,11 @@
 		});
 		
 		amount_dex_field.addEventListener('focus', function() {
+			
 	        amount_dex_field_focus = true;
 	    });
-	    amount_dex_field.addEventListener('blur', function() {
+	     amount_dex_field.addEventListener('blur', function() {
+	     	
 	        amount_dex_field_focus = false;
 	    });
 		amount_dex_field.addEventListener('change', function(e) {
@@ -802,6 +1142,10 @@
 		
 		var slide_in; 
 		var slide_out;
+		
+		var showDarkView = Ti.UI.createAnimation({opacity:0.4, duration:200});
+		var fadeDarkView = Ti.UI.createAnimation({opacity:0.0, duration:200});
+		
 		if( OS_ANDROID ){
 			slide_in = Ti.UI.createAnimation({top: display_height - 460, duration:200});
 			slide_out = Ti.UI.createAnimation({top: display_height, duration:200});
@@ -817,7 +1161,7 @@
 		var searchField = _requires['util'].makeTextField({
 			borderStyle : Ti.UI.INPUT_BORDERSTYLE_ROUNDED,
 			color : 'black',
-			hintText : 'token name',
+			hintText : 'Enter name',
 			autocorrect : false,
 			left : 5,
 			width : 130,
@@ -846,10 +1190,37 @@
 			height : 30,
 			right : 10
 		});
+		
+		var close_order = _requires['util'].makeLabel({
+			text : 'close',
+			color : 'white',
+			font : {
+				fontFamily : 'Helvetica Neue',
+				fontSize : 15,
+				fontWeight : 'light'
+			},
+			height : 30,
+			right : 10
+		});
+		
+		var order_list_title = _requires['util'].makeLabel({
+			text : L('order_list_title'),
+			color : 'white',
+			font : {
+				fontFamily : 'Helvetica Neue',
+				fontSize : 15,
+				fontWeight : 'light'
+			},
+			height : 30
+		});
 	
 		picker_toolbar.add(searchField);
 		picker_toolbar.add(search);
 		picker_toolbar.add(close);
+		
+		
+		picker_toolbar_order.add(close_order);
+		picker_toolbar_order.add(order_list_title);
 		
 		var searchText = ' ';
 		
@@ -865,7 +1236,15 @@
 		
 		close.addEventListener('click',function() {
 			searchField.blur();
+			darkView.animate(fadeDarkView);
+			setTimeout(function() { darkView.hide(); }, 200);
 			picker1.animate(slide_out);
+		});
+		
+		close_order.addEventListener('click',function() {
+			pickerOrder.animate(slide_out);
+			darkView.animate(fadeDarkView);
+			setTimeout(function() { darkView.hide(); }, 200);
 		});
 	
 	
@@ -963,10 +1342,14 @@
 				addingTokens = false;
 			}
 		};
+		
 		buySellTokens.addEventListener('click', selectToken);
 	
 		box1_range.addEventListener('touchstart', function() {
+			pickerOrder.animate(slide_out);
 			picker1.animate(slide_in);
+			darkView.animate(showDarkView);
+			darkView.show();
 			search_tokens = [ {asset: L('label_exchange_getting_tokens') }];
 			setTimeout(function() { addBuySellTokens(); }, 500);
 		});
@@ -1060,7 +1443,8 @@
 				left: 2
 			});
 			picker1.animate(slide_out);
-			
+			darkView.animate(fadeDarkView);
+			setTimeout(function() { darkView.hide(); }, 200);
 			fields_row.opacity = 1;
 			switch_image.opacity = 1;
 			fields_row.touchEnabled = true;
@@ -1151,27 +1535,118 @@
 	   		}
 	   		updatePrice();
 		}
+		function selectRowOrder(e) {
+				
+			 var anOrder =	 my_order_history[e.index];
+			 var statusOrder = anOrder.status;
+			 
+			 if(statusOrder == 'open'){
+			 	var cancelingStatus = Ti.App.Properties.getString(anOrder.tx_hash);
+				if( cancelingStatus !== 'CANCELING' ){
+				 	var loading = _requires['util'].showLoading(globals.main_window, {
+						width : Ti.UI.FILL,
+						height : Ti.UI.FILL
+					});
+					_requires['network'].connectGETv2({
+	  					'method': 'fees/recommended',
+	   					'callback': function(result){
+							_requires['network'].connectPOSTv2({
+			  					'method': 'transactions/cancel',
+			    				'post': {
+			       				 	source: _requires['cache'].data.address,
+			       					offer_hash:anOrder.tx_hash,
+			       					fee_per_kb:result[_requires['cache'].data.current_fee],
+			   					 },
+			   					 'callback': function(result){
+			   					 	loading.removeSelf();
+			   					 	
+			   					 	var feeInBTC = (result.fee / 100000000).toFixed(8);
+									var feeInCurrency = globals.requires['tiker'].to('BTC', feeInBTC, globals.requires['cache'].data.currncy);
+								
+			   					 	
+			   					 	var dialog = _requires['util'].createDialog({
+							   			title:L('exchange_cancel_confirm_title'),
+										message:L('exchange_cancel_confirm').format({'fee' :  feeInBTC + 'BTC (' + feeInCurrency + ')'}),
+										buttonNames: [L('exchange_cancel_cancel'),L('exchange_cancel_ok')]
+									});
+									dialog.addEventListener('click', function(e){
+										if( e.index != e.source.cancel ){
+											_requires['auth'].check({ title: L('text_confirmsend'), callback: function(e){
+												if( e.success ){
+			   					 					loading = _requires['util'].showLoading(globals.main_window, {
+														width : Ti.UI.FILL,
+														height : Ti.UI.FILL
+													});
+			   					 					Ti.App.Properties.setString(anOrder.tx_hash, "CANCELING");
+							     				 	_requires['bitcore'].sign(result.unsigned_tx, {
+														'callback': function(signed_tx){
+															_requires['network'].connect({
+																'method': 'sendrawtransaction',
+																'post': {
+																	tx: signed_tx
+																},
+																'callback': function( result ){
+																	_requires['util'].createDialog({
+																		message : L('exchange_confirm_canceled_message'),
+																		buttonNames : [L('label_close')]
+																	}).show();
+																	
+															
+																},
+																'onError': function(error){
+																	if( error.indexOf('send a transaction') > -1 ) error = L('text_error_order');
+																	alert(error);
+																},
+																'always': function(){
+																	loading.removeSelf();
+																	resetForm();
+																	getOrderHistory();
+																}
+															});
+														},
+														'fail': function(){
+															alert(L('text_error_serierize'));
+															loading.removeSelf();
+														}
+													});
+												}
+											}});
+										}	
+									});
+									dialog.show();
+								},
+			    				'onError': function(error){
+			    					loading.removeSelf();
+			      			  		alert(error);
+			    				}
+							});
+						},
+						'onError' : function(error) {
+							alert(error);
+							loading.removeSelf();
+						}
+					});
+				}
+			}
+		}
 		function showNoOrdersSellTutorial(){
 			
 				if( Ti.App.Properties.getString('shows_order_how') !== 'FALSE'){
 					
 				if(spend_asset === 'XCP'){
 					var dialog = _requires['util'].createDialog({
-		   			title:L('exchange_how_to_orders_title_sell').format({'asset':buy_asset}),
-					message:L('exchange_how_to_no_orders_sell').format({'asset':buy_asset}),
-					buttonNames: [L('text_dont_show'),'OK']
+			   			title:L('exchange_how_to_orders_title_sell').format({'asset':buy_asset}),
+						message:L('exchange_how_to_no_orders_sell').format({'asset':buy_asset}),
+						buttonNames: [L('text_dont_show'),'OK']
+						});
+						dialog.addEventListener('click', function(e){
+						if( e.index == e.source.cancel ){
+							Ti.App.Properties.setString('shows_order_how', "FALSE");
+						}
 					});
-					dialog.addEventListener('click', function(e){
-					if( e.index == e.source.cancel ){
-						Ti.App.Properties.setString('shows_order_how', "FALSE");
-					}
-				});
-				dialog.show();
+					dialog.show();
 				}
-				
-				
 			}
-		
 		}
 		function showNoOrdersBuyTutorial(){
 			
@@ -1855,6 +2330,14 @@
 		//orders_group.backgroundColor = 'blue';
 		orders_group.top = top_bar.top + top_bar.height;
 		
+		var darkView =  Ti.UI.createView({
+			backgroundColor : 'black',
+			width : Ti.UI.FILL,
+			height : Ti.UI.FILL
+		});
+		darkView.opacity = 0.0;
+		darkView.hide();
+		
 		var confirm_button_dex = Ti.UI.createButton({
 	        backgroundColor : "#4b986e",
 	        borderRadius: 4,
@@ -1862,7 +2345,7 @@
 	        color:'white',
 	        height :25,
 			width:'20%',
-			left:5,
+			left:6,
 	        font:{fontFamily:'Gill Sans', fontSize: (OS_ANDROID && L('language') === 'en')? 12: 15, fontWeight:'light'}
 	    });
 		var footer_bar =  Ti.UI.createView({
@@ -2172,7 +2655,47 @@
 			var fiat_val = _requires['tiker'].to('XCP', total_amount, _requires['cache'].data.currncy,8);
 			
 			var result = null;
-			if(buySellType === "buy"){
+			
+					var loading = _requires['util'].showLoading(globals.main_window, {
+									width : Ti.UI.FILL,
+									height : Ti.UI.FILL
+								});			
+								
+								
+								
+								
+								
+								
+								
+								var main_token = buy_asset;
+								if( buy_asset === 'XCP' ) main_token = spend_asset;
+								
+								_requires['network'].connectGETv2({
+					  					'method': 'fees/recommended',
+					   					 'callback': function(result){
+								
+								_requires['network'].connect({
+									'method' : 'create_order',
+									'post' : {
+										id : _requires['cache'].data.id,
+										address: _requires['cache'].data.address,
+										type : buySellType,
+										price_token : 'XCP',
+										price_quantity : total_amount,
+										main_token : main_token,
+										main_quantity : send_amount,
+										fee_per_kb:result[_requires['cache'].data.current_fee],
+									},
+									'callback' : function(result) {
+										
+										
+										loading.removeSelf();
+									var feeInBTC = (result.fee / 100000000).toFixed(8);
+									
+									var feeInCurrency = globals.requires['tiker'].to('BTC', feeInBTC, globals.requires['cache'].data.currncy);
+										
+										
+										if(buySellType === "buy"){
 				var dialog = _requires['util'].createDialog({
 					title : L('label_confirmorder'),
 					message : L('text_confirmorder_buying').format({
@@ -2184,7 +2707,7 @@
 						'total_asset': 'XCP',
 						'main_asset' : buy_asset,
 						'fiat' : fiat_val,
-						'fee' : '0.0001543 BTC'
+						'fee' : feeInBTC + 'BTC (' + feeInCurrency + ')',
 					}),
 					buttonNames : [L('label_cancel'),L('label_exchange_place_order')]
 				});
@@ -2201,7 +2724,7 @@
 						'total_asset': 'XCP',
 						'main_asset' : spend_asset,
 						'fiat' : fiat_val,
-						'fee' : '0.0001543 BTC'
+						'fee' : feeInBTC + 'BTC (' + feeInCurrency + ')',
 					}),
 					buttonNames : [L('label_cancel'),L('label_exchange_place_order')]
 				});
@@ -2212,25 +2735,19 @@
 						title : L('label_confirmorder'),
 						callback : function(e) {
 							if (e.success) {
-								var loading = _requires['util'].showLoading(globals.main_window, {
+								 loading = _requires['util'].showLoading(globals.main_window, {
 									width : Ti.UI.FILL,
 									height : Ti.UI.FILL
 								});
 								
-								var main_token = buy_asset;
-								if( buy_asset === 'XCP' ) main_token = spend_asset;
-								_requires['network'].connect({
-									'method' : 'create_order',
-									'post' : {
-										id : _requires['cache'].data.id,
-										address: _requires['cache'].data.address,
-										type : buySellType,
-										price_token : 'XCP',
-										price_quantity : total_amount,
-										main_token : main_token,
-										main_quantity : send_amount
-									},
-									'callback' : function(result) {
+										
+										
+										
+										
+										
+										
+										
+										
 										_requires['bitcore'].sign(result.unsigned_hex, {
 											'address': _requires['cache'].data.address,
 											'callback': function(signed_tx) {
@@ -2275,20 +2792,50 @@
 												loading.removeSelf();
 											}
 										});
-									},
-									'onError' : function(error) {
-										alert(error);
-										loading.removeSelf();
-									}
-								});
+										
+										
+												
 							}
 						}
 					});
 				}
 			});
 			dialog.show();
+			
+										
+										
+										
+									},
+									'onError' : function(error) {
+										alert(error);
+										loading.removeSelf();
+									}
+								});
+								
+								
+								
+								},
+			'onError' : function(error) {
+				alert(error);
+				loading.removeSelf();
+			}
+		});
+			
+								
+								
+								
+								
+								
+						
+			
+			
+			
+			
 		}
+		view_dex.add(darkView);
 		view_dex.add(picker1);
+		
+		view_dex.add(pickerOrder);
 		
 		function init(){
 			selected_asset = '';
@@ -2306,6 +2853,9 @@
 	}
 	
 	function startDex(){
+		
+		
+		
 		if(Ti.API.dexLoad != 'YES'){
 			if( globals.balances != null ) load();
 			else{
@@ -2317,7 +2867,7 @@
 						load();
 					}
 				}, 500);
-			}	
+			}
 			if( Ti.App.Properties.getString('shows_dex_how3') !== 'FALSE'){
 			    var dialog = _requires['util'].createDialog({
 			   		title:L('exchange_how_to_title'),

@@ -76,6 +76,26 @@ module.exports = (function() {
 		};
 		xhr.send( params.post );
 	};
+	self.connectPOSTv2 = function( params ){
+  		var xhr = Ti.Network.createHTTPClient();
+  		xhr.open('POST', Alloy.CFG.api_uri + '/v2/' + params.method);
+  		xhr.setRequestHeader("Content-Type", "application/json");
+		xhr.setRequestHeader('charset','utf-8');
+  		xhr.onload = function(){
+   		 var results = '';
+    		try{
+    			results = JSON.parse( this.responseText );
+    		}
+    		catch(e){}
+    		params.callback( results );
+    		if( params.always != null ) params.always();
+  		},
+  		xhr.onerror = function(e){
+   		 onerror(params, e);
+    		if( params.always != null ) params.always();
+  			};
+  			xhr.send( JSON.stringify(params.post) );
+	};
 	self.connectPOST = function( params ){
 		var xhr = Ti.Network.createHTTPClient();
 		xhr.open('POST', Alloy.CFG.api_uri + 'wallet/v1/' + params.method);
@@ -97,6 +117,27 @@ module.exports = (function() {
 	self.connectGET = function( params ){
 		var xhr = Ti.Network.createHTTPClient();
 		xhr.open('GET', Alloy.CFG.api_uri + 'wallet/v1/' + params.method);
+		xhr.onload = function(){
+			var results = '';
+			try{
+				results = JSON.parse( this.responseText );
+			}
+			catch(e){}
+			params.callback( results );
+			if( params.always != null ) params.always();
+		},
+		xhr.onerror = function(e){
+			onerror(params, e);
+			if( params.always != null ) params.always();
+		};
+		xhr.send();
+	};
+	
+	self.connectGETv2 = function( params ){
+		var xhr = Ti.Network.createHTTPClient();
+		xhr.open('GET', Alloy.CFG.api_uri + '/v2/' + params.method);
+  		xhr.setRequestHeader("Content-Type", "application/json");
+		xhr.setRequestHeader('charset','utf-8');
 		xhr.onload = function(){
 			var results = '';
 			try{

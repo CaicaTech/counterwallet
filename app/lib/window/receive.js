@@ -1,40 +1,20 @@
-
-	
-    var _requires = globals.requires;
-     
-    var view_receive = Ti.UI.createView({ backgroundColor:'#FFFFFF', width: Ti.UI.FILL, height: Ti.UI.FILL });
-	var view_box = Ti.UI.createView({ backgroundColor:'transparent', width: Ti.UI.FILL, height: Ti.UI.FILL });
-	               
-                  
-	var top_bar_receive = Ti.UI.createView({ backgroundColor:'#e54353', width: Ti.UI.FILL, height: 60 });
-	top_bar_receive.top = 0;
-	function removeAllChildren(viewObject){
-    //copy array of child object references because view's "children" property is live collection of child object references
-    var children = viewObject.children.slice(0);
+var _requires = globals.requires;
  
-    for (var i = 0; i < children.length; ++i) {
+var view_receive = Ti.UI.createView({ backgroundColor:'#FFFFFF', width: Ti.UI.FILL, height: Ti.UI.FILL });
+var view_box = Ti.UI.createView({ backgroundColor:'transparent', width: Ti.UI.FILL, height: Ti.UI.FILL });         
+var top_bar_receive = Ti.UI.createView({ backgroundColor:'#e54353', width: Ti.UI.FILL, height: 60 });
+
+top_bar_receive.top = 0;
+function removeAllChildren(viewObject){
+	//copy array of child object references because view's "children" property is live collection of child object references
+    var children = viewObject.children.slice(0);
+	for (var i = 0; i < children.length; ++i) {
         viewObject.remove(children[i]);
     }
 }
-	function setImageQR(){
-		removeAllChildren(view_box);
-	
 
-	
-	var addressQR = _requires['cache'].data.address;
-	text_title_rec = _requires['util'].group({
-		title: _requires['util'].makeLabel({
-			text: L('label_bitcoinaddress'),
-			top: 10,
-			font:{ fontSize: 12 }
-		}),
-		address: _requires['util'].makeLabel({
-			text: addressQR,
-			top: 30,
-			font:{ fontSize: 13 }
-		})
-	});
-	text_title_rec.top = 0;
+function setImageQR(){
+	removeAllChildren(view_box);
 	
 	home_title_center = _requires['util'].makeLabel({
 		text:L('label_tab_receive'),
@@ -49,36 +29,43 @@
 		home_title_center.top = 20;
 	}
 	
-	
 	function createQRcode( qr_data ){
 		
-	 	view_qr = _requires['util'].group({
-			'img_qrcode': _requires['util'].makeImageButton({
+		var addressQR = _requires['cache'].data.address;
+		var text_title_rec = _requires['util'].group({
+			title: _requires['util'].makeLabel({
+				text: L('label_bitcoinaddress'),
+				top: 0,
+				font:{ fontSize: 12 }
+			}),
+			address: _requires['util'].makeLabel({
+				text: addressQR,
+				top: 10,
+				font:{ fontSize: 13 }
+			}),
+			view_qr: _requires['util'].makeImageButton({
 			    image: qr_data,
 			    width: 290, height: 290,
-			    top:40, left: 0,
+			    top: 0, left: 0,
 			    listener: function(){
+			    	//if(activeTab == 2){ ??
 					Ti.UI.Clipboard.setText( addressQR );
 					_requires['util'].createDialog({
 						message:L('text_copied_message'),
 						buttonNames: [L('label_close')]
 					}).show();
+					//}
 				}
 			}),
-			title: text_title_rec
-		});
+			taptocopy: _requires['util'].makeLabel({
+				text:L('label_qrcopy'),
+				textAlign: 'left',
+				font:{fontFamily: 'HelveticaNeue-Light', fontSize:15, fontWeight:'light'},
+				top: 0
+			})
+		}, 'vertical');
 		
-		view_box.add(view_qr);
-		
-		var tap = _requires['util'].makeLabel({
-			text:L('label_qrcopy'),
-			textAlign: 'left',
-			font:{fontFamily: 'HelveticaNeue-Light', fontSize:15, fontWeight:'light'},
-			bottom: 100
-		});
-		
-		view_box.add(tap);
-		
+		view_box.add(text_title_rec);
 	}
 	
 	var f = Ti.Filesystem.getFile(Ti.Filesystem.applicationDataDirectory, 'qr_address.png');
@@ -103,10 +90,6 @@
 		createQRcode(f);
 	}
 	
-	}
-	view_receive.add(view_box);
-	
-	
-	
-	view_receive.add(top_bar_receive);
-	
+}
+view_receive.add(view_box);
+view_receive.add(top_bar_receive);

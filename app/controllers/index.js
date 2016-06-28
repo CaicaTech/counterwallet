@@ -7,22 +7,19 @@ if( cache.load() ){
 	var network = globals.requires['network'];
 	var b = require('crypt/bcrypt');
 	bcrypt = new b();
-	
-	globals._parseArguments();
 	Ti.App.addEventListener('resumed', function(e) {
-		Ti.API.info('resumed');
 		if( OS_IOS ) Ti.UI.iPhone.setAppBadge(0);
 		if( globals.isReorg ) globals.backgroundfetch();
 		var url = null;
 		if( OS_ANDROID && e.args != null ){
 			url = 'indiewallet://' + e.args.url;
-			globals.lastUrl = null;
 		}
 		globals._parseArguments(url);
 	});
 	if( OS_ANDROID ){
 		Ti.Android.currentActivity.addEventListener('app:resume', function(e) {
-	        Ti.App.fireEvent('resumed', { args: { url: e.data } });
+	     	globals.lastUrl = null;
+	    	Ti.App.fireEvent('resumed', { args: { url: e.data } });
 	    });
 	}
 	
@@ -53,9 +50,9 @@ if( cache.load() ){
 		globals.tabGroup = tabGroup;
 		
 		Ti.API.home_tab = home_tab;
-		//globals.open = true;
 	};
 	
+	if( cache.data.current_fee == null || cache.data.current_fee.length <= 0 ) cache.data.current_fee = "halfHourFee";
 	if( cache.data.id != null ){
 		if( OS_IOS ) globals.createTab();
 		globals.windows['home'].run();
@@ -63,5 +60,5 @@ if( cache.load() ){
 	else globals.windows['login'].run();
 }
 else{
-	alert(L('text_access_deny'));
+	alert(L('text_access_deny') + '\nError:1000');
 }

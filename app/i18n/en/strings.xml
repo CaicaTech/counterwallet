@@ -3,6 +3,8 @@
 	<string name="language">en</string>
 	
 	<string name="appname">IndieSquare Wallet</string>
+	<string name="label_order_history">history</string>
+	<string name="order_list_title">My order history</string>
 	<string name="label_about">About</string>
 	<string name="label_add_wallet">create new address</string>
 	<string name="label_load_tokens">polishing tokens...</string>
@@ -22,7 +24,7 @@
 	<string name="text_main_address">main wallet</string>
 	<string name="label_password">password</string>
 	<string name="label_send">send</string>
-	<string name="label_showinfo">asset info</string>
+	<string name="label_showinfo">token info</string>
 	<string name="label_order">Order</string>
 	<string name="label_price">Price</string>
 	<string name="label_quantity">Quantity</string>
@@ -32,10 +34,10 @@
 	<string name="label_sell_closed">sold</string>
 	<string name="label_noprice">No Price</string>
 	<string name="text_gocustom">please create a custom order</string>
-	<string name="label_confirm">confirm</string>
+	<string name="label_confirm">Confirm</string>
 	<string name="label_close">Close</string>
 	<string name="label_login">Login</string>
-	<string name="label_bitcoinaddress">My Bitcoin Address</string>
+	<string name="label_bitcoinaddress">My Address\n(receive your bitcoin and tokens)</string>
 	<string name="label_qrcopy">(tap to copy)</string>
 	<string name="label_destination">to address</string>
 	<string name="label_fee">fee</string>
@@ -70,7 +72,7 @@
 	<string name="shape_shift_norate">rate not loaded, try again</string>
 	<string name="text_doissuance">Issue</string>
 	<string name="text_dosend">SEND</string>
-	<string name="label_get_xcp">You need at least 0.5 XCP to create a token, you can get XCP by visiting the shapeshift tab</string>
+	<string name="label_get_xcp">Not enough XCP. You need 0.5 XCP to create a new named token.</string>
 	<string name="label_buy_xcp">Buy XCP</string>
 	<string name="text_makedivisible">Make Divisible</string>
 	<string name="text_hold">You Own {balance} Units of {asset}</string>
@@ -87,10 +89,18 @@
 	<string name="text_copied">Copied</string>
 	<string name="text_copied_message">Address copied to clipboard</string>
 	
+	<string name="title_settings_high_fee">High Priority</string>
+	<string name="title_settings_med_fee">Medium Priority</string>
+	<string name="title_settings_low_fee">Low Priority</string>
+	
+	<string name="subtitle_settings_high_fee">Estimated confirmation time: 10 mins</string>
+	<string name="subtitle_settings_med_fee">Estimated confirmation time: 30 mins</string>
+	<string name="subtitle_settings_low_fee">Estimated confirmation time: 60 mins</string>
+	
 	<string name="label_exchange_instructions1">select which token you would like to buy or sell</string>
 	<string name="label_exchange_instructions2">select whether you'd like to buy or sell</string>
 	
-	
+	 <string name="text_tokenly_sent">Registered</string>
 	
 	<string name="label_exchange_xcp_balance">XCP balance</string>
 	<string name="label_exchange_token">please select a token</string>
@@ -126,7 +136,19 @@
 	<string name="exchange_order_enter_amount">Enter the amount of {asset} you would like</string>
 	<string name="exchange_order_enter_price">Enter the price per {asset} you would like</string>
 	
+	<string name="exchange_cancel_confirm_title">Cancel order</string>
+	<string name="exchange_cancel_confirm">Are you sure you would like to cancel this order? ({fee} miners fee will apply)</string>
+	<string name="exchange_cancel_cancel">Don't cancel order</string>
+    <string name="exchange_cancel_ok">Cancel order</string>
 	
+	<string name="label_exchange_completed">COMPLETED</string>
+	<string name="label_exchange_expired">EXPIRED</string>
+	<string name="label_exchange_cancelled">CANCELLED</string>
+	
+	<string name="exchange_confirm_canceled_message">Your order has been canceled, this may take around 10 minuets to confirm</string>
+	<string name="label_exchange_canceling">CANCELLING...</string>
+	
+	<string name="exchange_loading_history">loading order history...</string>
 	<string name="exchange_loading_closed">loading closed orders...</string>
 	<string name="exchange_loading_buy">loading buy orders...</string>
 	<string name="exchange_loading_sell">loading sell orders...</string>
@@ -137,13 +159,14 @@
 	<string name="label_exchange_calculate">confirm</string>
 	<string name="label_approx">approx</string>
     <string name="label_tab_home">tokens</string>
+     <string name="label_tab_indieboard">indieBoard(β)</string>
     <string name="label_tab_ss">shapeshift</string>
 	<string name="label_tab_exchange">exchange</string>
 	<string name="label_tab_receive">receive</string>
 	<string name="label_tab_history">history</string>
-	<string name="label_tab_settings">settings</string>
+	<string name="label_tab_settings">Settings</string>
 	<string name="label_tab_help">FAQ</string>
-	<string name="label_asset_info">asset info</string>
+	<string name="label_asset_info">token info</string>
 	<string name="label_send">send</string>
 	<string name="label_exchange_will_buy">get </string>
 	<string name="label_exchange_will_spend">cost </string>
@@ -163,6 +186,8 @@
 	<string name="text_history_order">Placed Sell Order: {give_quantity} {give_asset} for {get_quantity} {get_asset}</string>
 	<string name="text_history_order_sold">Placed Sell Order: {give_quantity} {give_asset} for {get_quantity} {get_asset}</string>
 	<string name="text_history_order_bought">Placed Buy Order: {give_quantity} {give_asset} for {get_quantity} {get_asset}</string>
+	<string name="text_history_cancel_buy">Cancelled Buy Order: {price} XCP for {quantity} {asset}</string>
+	<string name="text_history_cancel_sell">Cancelled Sell Order: {price} XCP for {quantity} {asset}</string>
 	<string name="text_history_send">Sent {quantity} {asset} to</string>
 	<string name="text_history_receive">Received {quantity} {asset} from</string>
 	<string name="text_history_issuance">Issued {quantity} {asset}</string>
@@ -190,7 +215,7 @@
 	<string name="label_privecypolicy2">By using this app I agree to the above.</string>
 	<string name="text_withmessage">Message attached</string>
 	<string name="text_unreadable">Could not recognize a valid address</string>
-	<string name="text_noregisted"> Not registered</string>
+	<string name="text_noregisted">Name</string>
 	<string name="label_rename">Change name</string>
 	<string name="title_rename">rename</string>
 	<string name="title_buy_XCP">buy XCP</string>
@@ -206,6 +231,7 @@
 	
 	<string name="text_desc_username">Change your name</string>
 	<string name="text_desc_fiat">Choose your preferred currency</string>
+	<string name="text_desc_fee">Default mining fee when sending a transaction</string>
 	<string name="text_desc_passphrase">Check your passphrase</string>
 	<string name="text_desc_passcode">Change your passcode</string>
 	<string name="text_desc_fingerprint">Authorize transactions using your fingerprint</string>
@@ -232,7 +258,7 @@
 	<string name="label_passphrase">Passphrase</string>
 	<string name="label_getting_price">getting price...</string>
 	<string name="label_passphrase_title">Write down this recovery passphrase</string>
-	<string name="text_passphrase">"{passphrase}"\n\nIf you lose this passphrase nobody will be able to restore your tokens. Please write it down.</string>
+	<string name="text_passphrase">"{passphrase}"\n\nIf you lose this passphrase nobody will be able to restore your bitcoin and tokens. Please write it down.</string>
 	
 	<string name="label_passphrase_ok">I wrote it down</string>
 	<string name="text_passphrase_re">You can see your passphrase in the settings page</string>
@@ -271,7 +297,7 @@
 	<string name="label_issue_balance">Balance {balance}</string>
 	<string name="how_to_exchange_ok">I got it!</string>
 	<string name="exchange_how_to_title">How to use</string>
-	<string name="exchange_how_to">Buy and Sell your favourite tokens for XCP! \n\nSimply select your desired token, and choose whether to buy or sell\n\nYou can set your own price or checkout the open buyers or sellers\n\nIf you get stuck you can always press the '?' in the top right corner
+	<string name="exchange_how_to">Buy and Sell your favourite tokens for XCP! \n\nSimply select your desired token, and choose whether to buy or sell\n\nYou can set your own price or checkout the open buyers or sellers
 	</string>			
 	
 	<string name="exchange_how_to_orders_title_sell">How to buy {asset}</string>
@@ -321,19 +347,21 @@
 	
 	<string name="text_webfailed">Failed to read...</string>
 	<string name="label_signout">Sign out</string>
-	<string name="text_signout">Are you sure you want to sign out?</string>
+	<string name="text_signout">Are you sure you want to sign out? We strongly recommend that you backup the recovery passphrase.</string>
 	 
 	<string name="label_reorganisation">Blockchain reorganisation</string>
 	<string name="text_reorganisation">Apologies, please wait while the service is being re-synced...</string>
 	<string name="label_please_wait">Please wait...</string>
 	<string name="text_reorganisation2">(May take upto 30 minutes.)</string>
 	
-	<string name="label_linkage">System linkage(β)</string>
+	<string name="label_linkage">System linkage</string>
 	<string name="text_signerror">Transaction could not be signed...</string>
 	<string name="text_readerror">Could not get a datas...</string>
 	<string name="text_authentication">Authentication</string>
 	
-	<string name="draw_explain">Generate a new passphrase. \nPlease rub the screen until the progress bar is filled.</string>
+	<string name="draw_title">You need to generate a secure random passphrase which will be used to store and restore your bitcoin and tokens.</string>
+	<string name="draw_explain">In order to make sure this is as secure and random as possible\nRUB THE SCREEN like crazy!</string>
+	
 	<string name="text_inputbyeach">INPUT WORD BY WORD</string>
 	<string name="text_word_num">WORD {num}</string>
 	<string name="text_inputbyeach_next">NEXT</string>
@@ -343,7 +371,7 @@
 	
 	<string name="label_review">Review ★★★★★</string>
 	<string name="label_support">Support</string>
-	<string name="label_tab_support">support</string>
+	<string name="label_tab_support">Support</string>
 	<string name="label_tab_menu">menu</string>
 	
 	<string name="text_support_title">Thank you for using the app</string>
@@ -397,8 +425,53 @@
 	<string name="label_create_image_desc">[Optional]Add an image to your token. It can be changed later.</string>
 	<string name="label_create_divisible_desc">[Required]Divisible tokens can be subdivided into decimal places. This cannot be changed later. If unsure, we recommend keeping it divisible.</string>
 	
+	<string name="text_tokenly_desc">You are registering the address{address}</string>
+	<string name="text_tokenly_confirm">Please check Tokenly for confirmation</string>
+	
 	<string name="label_ex_tokenname">ex）INDIESQUARE</string>
 	<string name="label_ex_quantity_issue">ex）100</string>
 	<string name="label_ex_description">ex）IndieSquare official coin</string>
 	<string name="label_ex_website">ex）http://</string>
+	
+	<string name="label_success_intro_1">Account succesfully created</string>
+	<string name="label_success_intro_2">You're almost ready to get started!\nwe just need to set up a few things..</string>
+	<string name="text_success_intro_button">Next</string>
+	
+	<string name="label_pass_intro_1">Write down this recovery phrase!</string>
+	<string name="label_pass_intro_3">If you lose your device or the app you need this to recover your bitcoin and tokens. You can check it later in the settings.</string>
+	<string name="label_pass_intro_4">KEEP IT SAFE AND SECRET!</string>
+	<string name="label_pass_intro_5">If somebody has this phrase they WILL be able to steal your bitcoin and tokens.</string>
+	<string name="text_pass_intro_button">I wrote it down</string>
+	
+	<string name="label_passcode_intro_1">Set a 4 digit passcode</string>
+	<string name="label_passcode_intro_2">this will be your pin code for the app allowing you to authorize transactions</string>
+	<string name="text_passcode_intro_button">Set passcode</string>
+	
+	<string name="label_touchid_intro_1">Would you like to set up touch ID?</string>
+	<string name="text_touchid_intro_button">Set up touch ID</string>
+	<string name="text_touchid_intro_button_skip">Skip</string>
+	
+	<string name="label_complete_intro_1">IndieSquareWallet is a Bitcoin 2.0 wallet that along with letting you send and receive bitcoin allows you to...</string>
+	<string name="label_complete_intro_2">Send and receive tokens</string>
+	<string name="label_complete_intro_3">Create tokens</string>
+	<string name="label_complete_intro_4">Trade tokens</string>
+	<string name="label_complete_intro_5">Buy XCP</string>
+	<string name="label_complete_intro_review">Setup has\nsuccessfully completed!</string>
+	
+	<string name="text_complete_intro_button">Let's get started!</string>
+	<string name="label_box_1">This page shows your bitcoin and tokens and their balances</string>
+	<string name="label_box_2">Send bitcoin and tokens by\ntapping the send button</string>
+	<string name="label_box_3">Receive bitcoin and tokens\nby tapping the receive tab</string>
+
+	<string name="label_permission_CAMERA">Important!</string>
+	<string name="text_permission_CAMERA">Please allow camera access to enable the app to scan QR codes.</string>
+	
+	<string name="text_access_deny">Please relaunch this app.</string>
+	<string name="label_permission_deny_camera">Not allowed the camera. Please allow the camera of IndieSquare Wallet from the device settings.</string>
+	<string name="label_go_settings">Go Settings</string>
+	
+	<string name="label_callback_getaddress">Authentication</string>
+	<string name="text_callback_getaddress">"{name}" would like to use the address \n{address}\nDo you accept it?</string>
+	
+	<string name="text_error_order">Order error. Please try again later.</string>
 </resources>

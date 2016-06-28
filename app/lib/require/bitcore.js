@@ -3,10 +3,18 @@ module.exports = (function() {
 	
 	require('vendor/UintArray');
 	var bitcore = require('vendor/bitcore');
+	//var Message = require('vendor/message');
 	var MnemonicJS = require('vendor/mnemonic');
 	var account = null;
 	var basePath = 'm/0\'/0/';
 	
+	self.signMessage = function(message){
+		return bitcore.signMessage(message,self.getPrivKey());
+	};
+	
+	self.verifyMessage = function(message,signature,address){
+		return bitcore.verifyMessage(message,signature,address);
+	};
 	self.init = function(passphrase, derive, nokeep){
 		if( passphrase == null ) return null;
 		

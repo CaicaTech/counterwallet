@@ -38,6 +38,7 @@ exports.run = function( params ){
 	main_view.add(view);
 	
 	var send_amount = '';
+	params.fiat = '-';
 	var is_fiatvalue = ( params.fiat !== '-' )? true: false;
 	
 	var token_amount_field = _requires['util'].makeLabel({
@@ -454,7 +455,7 @@ exports.run = function( params ){
 			textAlign:'center',
 			font:{ fontSize:20, fontWeight:'normal'},
 			border: 'hidden',
-			keyboardType: Ti.UI.KEYBOARD_DECIMAL_PAD,
+			keyboardType: Ti.UI.KEYBOARD_TYPE_DECIMAL_PAD,
 		})
 	});
 	box_amount.top = 0;
@@ -476,7 +477,7 @@ exports.run = function( params ){
 			textAlign:'center',
 			font:{ fontSize:20, fontWeight:'normal'},
 			border: 'hidden',
-			keyboardType: Ti.UI.KEYBOARD_DECIMAL_PAD,
+			keyboardType: Ti.UI.KEYBOARD_TYPE_DECIMAL_PAD,
 		})
 	});
 	box_amount_fiat.top = 65;
@@ -546,17 +547,14 @@ exports.run = function( params ){
 			
 			var fiat_conf = fiat_amount_field.text;
 			
-			var dialog = _requires['util'].createDialog({
-				title: L('label_confirm'),
-				message: L('text_sendconfirmation').format( { 'address': recipient.value, 'amount': temp_field.value, 'token':params.asset, 'amount2': fiat_conf })+' '+L('label_fee') + ' ' + tx_fee + 'BTC',
-				buttonNames: [L('label_cancel'), L('label_ok')]
-			});
-			dialog.addEventListener('click', function(e){
-				if( e.index != e.source.cancel ){
-					_requires['auth'].check({ title: L('text_confirmsend'), callback: function(e){
-						if( e.success ){
 							
 							var loading = _requires['util'].showLoading(win.origin, { width: Ti.UI.FILL, height: Ti.UI.FILL, message: L('loading_send')});
+							
+							
+							_requires['network'].connectGETv2({
+					  					'method': 'fees/recommended',
+					   					 'callback': function(result){
+							
 							_requires['network'].connect({
 								'method': 'create_send',
 								'post': {
@@ -564,9 +562,33 @@ exports.run = function( params ){
 									address: _requires['cache'].data.address,
 									asset: params.asset,
 									destination: recipient.value,
-									quantity: temp_field.value
+									quantity: temp_field.value,
+
+									fee_per_kb:result[_requires['cache'].data.current_fee],
+
 								},
 								'callback': function( result ){
+									loading.removeSelf();
+									if(params.asset == 'BTC'){
+										var feeInBTC = (result.fee / 100000000).toFixed(8);
+									}
+									else{
+										var feeInBTC = ((result.fee / 100000000) + 0.0000543).toFixed(8);
+									}
+									
+									var feeInCurrency = globals.requires['tiker'].to('BTC', feeInBTC, globals.requires['cache'].data.currncy);
+									var dialog = _requires['util'].createDialog({
+				title: L('label_confirm'),
+				message: L('text_sendconfirmation').format( { 'address': recipient.value, 'amount': temp_field.value, 'token':params.asset, 'amount2': fiat_conf })+'\n\n'+L('label_fee') + ' ' + feeInBTC + 'BTC (' + feeInCurrency + ')',
+				buttonNames: [L('label_cancel'), L('label_ok')]
+			});
+			dialog.addEventListener('click', function(e){
+				if( e.index != e.source.cancel ){
+			
+			_requires['auth'].check({ title: L('text_confirmsend'), callback: function(e){
+						if( e.success ){
+									loading = _requires['util'].showLoading(win.origin, { width: Ti.UI.FILL, height: Ti.UI.FILL, message: L('loading_send')});
+							
 									_requires['bitcore'].sign(result.unsigned_hex, {
 										'address': _requires['cache'].data.address,
 										'destination': recipient.value,
@@ -619,17 +641,46 @@ exports.run = function( params ){
 											loading.removeSelf();
 										}
 									});
+									
+									
+									
+					}
+					}});
+				
+					
+					}else{
+						loading.removeSelf();
+					}
+							});
+			dialog.show();
+						
+									
+									
+									
+									
+									
+									
 								},
 								'onError': function(error){
 									alert(error);
 									loading.removeSelf();
 								}
 							});
-						}
-					}});
-				}
-			});
-			dialog.show();
+							
+							
+							
+											},
+			'onError' : function(error) {
+				alert(error);
+				loading.removeSelf();
+			}
+		});
+				
+							
+							
+							
+							
+						
 		}
 		else{
 			var dialog = _requires['util'].createDialog({

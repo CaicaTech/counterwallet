@@ -50,6 +50,7 @@ var r = new Array(
 	'inputverify.js',
 	'layer.js',
 	'network.js',
+	'pubsub.js',
 	'tiker.js',
 	'util.js',
 	'webview.js'
@@ -174,7 +175,7 @@ globals.reorg_occured = function(){
 			globals.reorg_views['home'] = globals.requires['util'].setReorg(Ti.API.home_win);
 			globals.reorg_views['history'] = globals.requires['util'].setReorg(Ti.API.history_win);
 			globals.reorg_views['dex'] = globals.requires['util'].setReorg(Ti.API.exchange_win);
-			globals.reorg_views['shapeshift'] = globals.requires['util'].setReorg(Ti.API.ss_win);
+			globals.reorg_views['shapeshift'] = globals.x['util'].setReorg(Ti.API.ss_win);
 			Ti.App.iOS.setMinimumBackgroundFetchInterval( Ti.App.iOS.BACKGROUNDFETCHINTERVAL_MIN );
 			Ti.App.iOS.addEventListener( 'backgroundfetch', globals.backgroundfetch );
 		}
@@ -216,44 +217,103 @@ function urlToObject(url)	{
 	return	obj;
 }
 
+
+function signAndSendMessageTokenly(url){
+	var loading;
+			if( OS_IOS ){
+				if( Ti.API.home_win != null ){ loading = _requires['util'].showLoading(Ti.API.home_win, { width: Ti.UI.FILL, height: Ti.UI.FILL, message: L('label_please_wait')});}
+			}
+			else{
+				if( globals.main_window != null ){ loading = _requires['util'].showLoading(globals.main_window, { width: Ti.UI.FILL, height: Ti.UI.FILL, message: L('label_please_wait')});}
+			}
+			
+			var scheme = url.split('?');
+			var msg = scheme[1];
+			msg = msg.replace('msg=', '');
+			
+			var sig = _requires['bitcore'].signMessage(msg);
+			var client = Ti.Network.createHTTPClient({
+				// function called when the response data is available
+				onload : function(e) {
+				if( loading != null ) loading.removeSelf();
+					globals.requires['util'].createDialog({
+				  		title : L('text_tokenly_sent'),
+						message: L('text_tokenly_confirm'),
+						buttonNames: [L('label_ok')]
+					}).show();
+				},
+		 		// function called when an error occurs, including a timeout
+				onerror : function(e) {
+					if( loading != null ) loading.removeSelf();
+					var arr_from_json = JSON.parse( this.responseText);
+					if(arr_from_json["error"] != undefined){
+						alert( arr_from_json["error"]);
+					}
+					else{
+						alert( this.responseText);
+					}
+				},
+		  		timeout : 15000  // in milliseconds
+			});
+			// Prepare the connection.
+			client.open("POST", url);
+			// Send the request.
+			client.send({
+				"msg":msg,
+				"address":_requires['cache'].data.address,
+				"sig":sig
+			});
+};
 globals._parseArguments = function( url, is_fromQR ) {
 	if( url == null ){
 		if( OS_IOS ) url = Ti.App.getArguments()['url'];
 		else{
-			function parseUri(sourceUri){
-			    var uriPartNames = ["source","protocol","authority","domain","port","path","directoryPath","fileName","query","anchor"];
-			    var uriParts = new RegExp("^(?:([^:/?#.]+):)?(?://)?(([^:/?#]*)(?::(\\d*))?)?((/(?:[^?#](?![^?#/]*\\.[^?#/.]+(?:[\\?#]|$)))*/?)?([^?#/]*))?(?:\\?([^#]*))?(?:#(.*))?").exec(sourceUri);
-			    var uri = {};
-			    for(var i = 0; i < 10; i++) uri[uriPartNames[i]] = (uriParts[i] ? uriParts[i] : "");
-			    if(uri.directoryPath.length > 0) uri.directoryPath = uri.directoryPath.replace(/\/?$/, "/");
-			    return uri;
-			}
-				
-			var activity = Ti.Android.currentActivity;
-			var data = activity.getIntent().getData();
-			if( data != null ){
-				activity.finish();
-				var parser = parseUri(data);
-				if( parser["protocol"] === "indiewallet" && parser["domain"] === "getaddress" ){
-					var returnApp = parser["query"].replace('success=','');
-					Ti.Platform.openURL(returnApp+'://sendaddress?address='+Ti.App.Properties.getString("current_address"));
+			var launchIntent = Ti.App.Android.launchIntent;
+			if( launchIntent != null ){ 
+				if( launchIntent.hasExtra('source') ){
+					url = 'indiewallet://' + launchIntent.getStringExtra('source');
 				}
-			}
-			else{
-				var launchIntent = Ti.App.Android.launchIntent;
-			    if( launchIntent != null ){ 
-			   		if( launchIntent.hasExtra('source') ){
-			   			url = 'indiewallet://' + launchIntent.getStringExtra('source');
-			   		}
-			   	}
 			}
 		}
 	}
 	
 	var _requires = globals.requires;
-	if( url && (is_fromQR || globals.lastUrl !== url) ) {
-		globals.lastUrl = url;
-		if( url.match(/^indiewallet:\/\/x-callback-url/) ){
+
+		if( url && (is_fromQR || globals.lastUrl !== url) ) {
+			globals.lastUrl = url;
+			if( url.indexOf('/instant-verify/') > -1 ){
+			
+			var tag =  Ti.App.Properties.getString(_requires['cache'].data.address);
+			if(tag == null || tag == 'NULL' ){
+				tag = "";
+			}
+		
+	
+			var dialog = _requires['util'].createDialog({
+					message : L('text_tokenly_desc').format({'address':"\n\n" + tag + "\n" + _requires['cache'].data.address}),
+					
+					buttonNames : [L('label_cancel'), L('label_confirm')]
+				});
+				
+				
+		
+		dialog.addEventListener('click', function(e) {
+					if( e.index != e.source.cancel ){
+					globals.requires['auth'].check({ title: L('text_authentication'), callback: function(e){
+						if( e.success ){
+								setTimeout(function() { signAndSendMessageTokenly(url); }, 1000);
+						}
+					}});
+				}
+				
+					
+				});
+				dialog.show();
+		
+		
+
+		}
+		else if( url.match(/^indiewallet:\/\/x-callback-url/) ){
 			var scheme = url.replace(/^indiewallet:\/\/x-callback-url\//, '').split('?');
 			var func = scheme[0];
 			var params = new Array();
@@ -262,10 +322,32 @@ globals._parseArguments = function( url, is_fromQR ) {
 			for(var i = 0; i < p.length; i++){
 				var a = p[i].split('=');
 				params[a[0]] = decodeURIComponent(a[1]);
-			}	
+			}
+			
 			if( func === 'getaddress' ){
 				if( 'x-success' in params ){
-					Ti.Platform.openURL(params['x-success'] + 'address=' + _requires['cache'].data.address);
+					var address = Ti.App.Properties.getString("current_address");
+					var dialog = _requires['util'].createDialog({
+						title: L('label_callback_getaddress'),
+						message: L('text_callback_getaddress').format( { 'address': address, 'name': params['x-success'] }),
+						buttonNames: [L('label_cancel'), L('label_ok')]
+					});
+					dialog.addEventListener('click', function(e){
+						if( e.index != e.source.cancel ){
+							if( 'msg' in params ){
+								try{
+									var sig = _requires['bitcore'].signMessage(params['msg']);
+									Ti.Platform.openURL(params['x-success'] + '://sendaddress?address=' + _requires['cache'].data.address+'&msg='+params['msg']+'&sig='+sig);
+								
+								}
+								catch(e){
+									Ti.API.info('error: '+e.error);
+								}
+							}
+							else Ti.Platform.openURL(params['x-success'] + '://sendaddress?address=' + address);
+						}
+					});
+					dialog.show();
 				}
 			}
 		}
@@ -277,21 +359,12 @@ globals._parseArguments = function( url, is_fromQR ) {
 			else{
 				if( globals.main_window != null ){ loading = _requires['util'].showLoading(globals.main_window, { width: Ti.UI.FILL, height: Ti.UI.FILL, message: L('label_please_wait')});}
 			}
-	    	var scheme = url.replace(/^indiewallet:\/\//, '').split('?');
+			var scheme = url.replace(/^indiewallet:\/\//, '').split('?');
 	    	
 	    	var func = scheme[0];
 	    	var params = JSON.parse(decodeURIComponent(scheme[1].split('=')[1]));
 	    	
-	    	Ti.include('require/pubnub.js');
-			
-			var pubnub = PUBNUB({
-			    publish_key       : Alloy.CFG.pubnub_pub,
-			    subscribe_key     : Alloy.CFG.pubnub_sub,
-			    ssl               : true,
-			    native_tcp_socket : true,
-			    origin            : 'pubsub.pubnub.com'
-			});
-			if( func === 'screen_to' ){
+	    	if( func === 'screen_to' ){
 				if( params.screen === 'send' ){
 					var s = setInterval(function(){
 						if( globals.balances != null && globals.tiker != null ){
@@ -321,10 +394,10 @@ globals._parseArguments = function( url, is_fromQR ) {
 									
 									globals.windows['send'].run(data);
 									globals.publich = function(data){
-										pubnub.publish({
-										    channel : params.channel,
-										    message : JSON.stringify(data),
-											callback: function(m){
+										globals.requires['pubsub'].publish({
+											'channel' : params.channel,
+											'message' : JSON.stringify(data),
+											'callback': function(m){
 												Ti.API.info(JSON.stringify(m));
 											}
 										});
@@ -367,14 +440,14 @@ globals._parseArguments = function( url, is_fromQR ) {
 			else{
 				if( loading != null ) loading.removeSelf();
 				function authorization(){
-			    	globals.requires['auth'].check({ title: L('text_authentication'), callback: function(e){
+					globals.requires['auth'].check({ title: L('text_authentication'), callback: function(e){
 						if( e.success ){
 							function publish( data ){
 								if( data != null ){
-									pubnub.publish({
-									    channel : params.channel,
-									    message : JSON.stringify(data),
-										callback: function(m){
+									globals.requires['pubsub'].publish({
+										'channel' : params.channel,
+										'message' : JSON.stringify(data),
+										'callback': function(m){
 											if( params.vending_wait_id != null ){
 												_requires['network'].connect({
 													'method': 'edit_vendingwait',
@@ -406,6 +479,7 @@ globals._parseArguments = function( url, is_fromQR ) {
 							if( func === 'signin' ){
 								var data = {
 									'id': globals.requires['cache'].data.id,
+									'password': globals.requires['cache'].data.password,
 									'cs': params.cs
 								};
 								publish( data );
@@ -430,9 +504,12 @@ globals._parseArguments = function( url, is_fromQR ) {
 								});
 							}
 							else if( func === 'sign' ){
-								pubnub.subscribe({
+								globals.requires['pubsub'].subscribe({
 								    channel  : params.channel + 'receive',
-								    callback : function(unsignd_hex) {
+								    connect  : function(){
+								    	Ti.API.info('Sub connect');
+								    },
+								    callback : function( unsignd_hex ) {
 								    	globals.requires['bitcore'].sign(unsignd_hex, {
   											'callback': function(signed_tx){
   												var data = {
@@ -449,23 +526,14 @@ globals._parseArguments = function( url, is_fromQR ) {
   										});
 								    }
 								});
-								pubnub.publish({
-								    channel : params.channel,
-								    message : JSON.stringify({
-								    	'connect': true
-								    }),
-									callback: function(m){}
-								});
 							}
 						}
 					}});
 				}
 				var s = setInterval(function(){
-					//if( globals.open ){
-			        clearInterval(s);
+				    clearInterval(s);
 			        authorization();
-			        //}
-				}, 100);
+			    }, 100);
 			}
 	    	
 		}

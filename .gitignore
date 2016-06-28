@@ -1,3 +1,7 @@
 .DS_Store
 /platform
 /i18n
+/build
+/Resources
+/modules
+/plugins

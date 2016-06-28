@@ -88,7 +88,7 @@ module.exports = (function() {
 	self.makeTextField = function( params ){
 		var basic = {
 			clearButtonMode: Ti.UI.INPUT_BUTTONMODE_ONFOCUS,
-			keyboardType: Ti.UI.KEYBOARD_DEFAULT,
+			keyboardType: Ti.UI.KEYBOARD_TYPE_DEFAULT,
 			returnKeyType: Ti.UI.RETURNKEY_DONE,
 			borderStyle: Ti.UI.INPUT_BORDERSTYLE_ROUNDED,
 			color: '#000000'
@@ -116,8 +116,8 @@ module.exports = (function() {
 		params.font = getFont( params );
 		
 		if( OS_ANDROID ){
-			if( params.keyboardType == Ti.UI.KEYBOARD_DECIMAL_PAD ){
-				params.keyboardType = Ti.UI.KEYBOARD_NUMBERS_PUNCTUATION;
+			if( params.keyboardType == Ti.UI.KEYBOARD_TYPE_DECIMAL_PAD ){
+				params.keyboardType = Ti.UI.KEYBOARD_TYPE_NUMBERS_PUNCTUATION;
 			}
 			if( params.height != null ){
 				params.height += 5;
@@ -125,7 +125,7 @@ module.exports = (function() {
 		}
 		
 		var field = Ti.UI.createTextField( merge(basic, params) );
-		if( params.keyboardType == Ti.UI.KEYBOARD_DECIMAL_PAD ){
+		if( params.keyboardType == Ti.UI.KEYBOARD_TYPE_DECIMAL_PAD ){
 			if( OS_IOS ){
 				var flexSpace = Ti.UI.createButton({ systemButton:Ti.UI.iPhone.SystemButton.FLEXIBLE_SPACE });
 				var doneButton = Ti.UI.createButton({ title : L('label_close'), width : 67, height : 32 });
@@ -239,45 +239,77 @@ module.exports = (function() {
 	self.makeAnimation = makeAnimation;
 	
 	self.openScanner = function( v ){
-		var scanditsdk = require("com.mirasense.scanditsdk");
-		var window = Ti.UI.createWindow({  
-			title:'Scan QRcode',
-			navBarHidden: true
-		});
-		var picker = scanditsdk.createView({
-			width: Ti.UI.FILL,
-			height: Ti.UI.FILL
-		});
-		picker.init("xKpFXhlXEeSO2ceePbErdDelCupO9KN+wZMNnAMjDQU", 0);
-		picker.showSearchBar(true);
-		picker.showToolBar(true);
-		picker.setSuccessCallback(function(e) {
-			v.callback(e);
-			if (picker != null) {
-				picker.stopScanning();
-				window.remove(picker);
+		function open(){
+			var scanditsdk = require("com.mirasense.scanditsdk");
+			var window = Ti.UI.createWindow({  
+				title:'Scan QRcode',
+				navBarHidden: true
+			});
+			var picker = scanditsdk.createView({
+				width: Ti.UI.FILL,
+				height: Ti.UI.FILL
+			});
+			picker.init("xKpFXhlXEeSO2ceePbErdDelCupO9KN+wZMNnAMjDQU", 0);
+			picker.showSearchBar(true);
+			picker.showToolBar(true);
+			picker.setSuccessCallback(function(e) {
+				v.callback(e);
+				if (picker != null) {
+					picker.stopScanning();
+					window.remove(picker);
+				}
+				window.close();
+			});
+			picker.setCancelCallback(function(e) {
+				if (picker != null) {
+					picker.stopScanning();
+					window.remove(picker);
+				}
+				window.close();
+			});
+			window.add(picker);
+			window.addEventListener('open', function(e) {
+				if( OS_IOS ){
+		    		picker.setOrientation(Ti.UI.orientation);
+				}	
+				else {
+					picker.setOrientation(window.orientation);
+				}
+				picker.setSize(Ti.Platform.displayCaps.platformWidth, Ti.Platform.displayCaps.platformHeight);
+				picker.startScanning();
+			});
+			window.open();
+		}
+		if( OS_ANDROID ){
+			var permission = 'android.permission.CAMERA';
+			var has = Ti.Android.hasPermission(permission);
+			if( !has ){
+				Ti.Android.requestPermissions([permission], function(e) {
+			    	if( e.success ){
+			    		open();
+			    	}
+			    	else{
+			    		var dialog = self.createDialog({
+							message: L('label_permission_deny_camera'),
+							buttonNames: [L('label_close'), L('label_go_settings')]
+						});
+						dialog.addEventListener('click', function(e) {
+							if (e.index != e.source.cancel) {
+								var intent = Ti.Android.createIntent({
+									action: 'android.settings.APPLICATION_DETAILS_SETTINGS',
+									data: 'package:' + Ti.App.id
+								});
+								intent.addFlags(Ti.Android.FLAG_ACTIVITY_NEW_TASK);
+								Ti.Android.currentActivity.startActivity(intent);
+							}
+						});
+						dialog.show();
+			    	}
+				});
 			}
-			window.close();
-		});
-		picker.setCancelCallback(function(e) {
-			if (picker != null) {
-				picker.stopScanning();
-				window.remove(picker);
-			}
-			window.close();
-		});
-		window.add(picker);
-		window.addEventListener('open', function(e) {
-			if( OS_IOS ){
-	    		picker.setOrientation(Ti.UI.orientation);
-			}	
-			else {
-				picker.setOrientation(window.orientation);
-			}
-			picker.setSize(Ti.Platform.displayCaps.platformWidth, Ti.Platform.displayCaps.platformHeight);
-			picker.startScanning();
-		});
-		window.open();
+			else open();
+		}
+		else open();
 	};
 	
 	self.group = function( params, layout ){
@@ -312,7 +344,7 @@ module.exports = (function() {
 	
 	self.createDialog = function( params, listener ){
 		if( params.title == null ) params.title = '';
-		if( params.buttonNames.length == 2 ){
+		if( params.buttonNames != null && params.buttonNames.length == 2 ){
 			if( OS_ANDROID ){
 				params.buttonNames.reverse();
 				if( params.cancel == null ) params.cancel = 1;
@@ -424,6 +456,29 @@ module.exports = (function() {
 			return button;
 		}
 		
+		var comp_marks = {
+			m0: self.makeImage({
+			    image: '/images/img_easyinput_none.png',
+			    width: 12,
+			    left: 0
+			}),
+			m1: self.makeImage({
+			    image: '/images/img_easyinput_none.png',
+			    width: 12,
+			    left: 20
+			}),
+			m2: self.makeImage({
+			    image: '/images/img_easyinput_none.png',
+			    width: 12,
+			    left: 40
+			}),
+			m3: self.makeImage({
+			    image: '/images/img_easyinput_none.png',
+			    width: 12,
+			    left: 60
+			})
+		};
+		
 		var numberArray = new Array();
 		var numbers = { reconfirmed: false };
 		var callback = function(sign){
@@ -520,28 +575,6 @@ module.exports = (function() {
 		});
 		logos.top = 0;
 		
-		var comp_marks = {
-			m0: self.makeImage({
-			    image: '/images/img_easyinput_none.png',
-			    width: 12,
-			    left: 0
-			}),
-			m1: self.makeImage({
-			    image: '/images/img_easyinput_none.png',
-			    width: 12,
-			    left: 20
-			}),
-			m2: self.makeImage({
-			    image: '/images/img_easyinput_none.png',
-			    width: 12,
-			    left: 40
-			}),
-			m3: self.makeImage({
-			    image: '/images/img_easyinput_none.png',
-			    width: 12,
-			    left: 60
-			})
-		};
 		var marks = self.group(comp_marks);
 		marks.top = 80;
 		
@@ -697,9 +730,9 @@ module.exports = (function() {
 			params.font = { fontSize: 15, fontFamily: 'HelveticaNeue-Light' };
 			params.color = '#333333';
 		}
-		var style = ( OS_IOS )? Ti.UI.iPhone.ActivityIndicatorStyle.PLAIN: Ti.UI.ActivityIndicatorStyle.PLAIN;
+		var style = Ti.UI.ActivityIndicatorStyle.PLAIN;
 		if( params.style != null ){
-			if( params.style === 'dark' ) style = (OS_IOS)? Ti.UI.iPhone.ActivityIndicatorStyle.DARK: Ti.UI.ActivityIndicatorStyle.DARK;
+			if( params.style === 'dark' ) style = Ti.UI.ActivityIndicatorStyle.DARK;
 		}
 		params.style = style;
 		

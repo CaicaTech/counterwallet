@@ -18271,6 +18271,7 @@ KeyPair.prototype.derive = function derive(pub) {
 
 // ECDSA
 KeyPair.prototype.sign = function sign(msg) {
+	
   return this.ec.sign(msg, this);
 };
 
@@ -44025,6 +44026,183 @@ module.exports={
 		xhr.send();
 	};
 	
+	var _ = bitcore.deps._;
+var PrivateKey = bitcore.PrivateKey;
+var PublicKey = bitcore.PublicKey;
+var Address = bitcore.Address;
+var BufferWriter = bitcore.encoding.BufferWriter;
+var ECDSA = bitcore.crypto.ECDSA;
+var Signature = bitcore.crypto.Signature;
+var sha256sha256 = bitcore.crypto.Hash.sha256sha256;
+var JSUtil = bitcore.util.js;
+var $ = bitcore.util.preconditions;
+
+/**
+ * constructs a new message to sign and verify.
+ *
+ * @param {String} message
+ * @returns {Message}
+ */
+var Message = function Message(message) {
+  if (!(this instanceof Message)) {
+    return new Message(message);
+  }
+  $.checkArgument(_.isString(message), 'First argument should be a string');
+  this.message = message;
+
+  return this;
+};
+
+Message.MAGIC_BYTES = new Buffer('Bitcoin Signed Message:\n');
+
+Message.prototype.magicHash = function magicHash() {
+  var prefix1 = BufferWriter.varintBufNum(Message.MAGIC_BYTES.length);
+  var messageBuffer = new Buffer(this.message);
+  var prefix2 = BufferWriter.varintBufNum(messageBuffer.length);
+  var buf = Buffer.concat([prefix1, Message.MAGIC_BYTES, prefix2, messageBuffer]);
+  var hash = sha256sha256(buf);
+  return hash;
+};
+
+Message.prototype._sign = function _sign(privateKey) {
+  $.checkArgument(privateKey instanceof PrivateKey,
+    'First argument should be an instance of PrivateKey');
+  var hash = this.magicHash();
+  var ecdsa = new ECDSA();
+  ecdsa.hashbuf = hash;
+  ecdsa.privkey = privateKey;
+  ecdsa.pubkey = privateKey.toPublicKey();
+  ecdsa.signRandomK();
+  ecdsa.calci();
+  return ecdsa.sig;
+};
+
+/**
+ * Will sign a message with a given bitcoin private key.
+ *
+ * @param {PrivateKey} privateKey - An instance of PrivateKey
+ * @returns {String} A base64 encoded compact signature
+ */
+Message.prototype.sign = function sign(privateKey) {
+  var signature = this._sign(privateKey);
+  return signature.toCompact().toString('base64');
+};
+
+Message.prototype._verify = function _verify(publicKey, signature) {
+  $.checkArgument(publicKey instanceof PublicKey, 'First argument should be an instance of PublicKey');
+  $.checkArgument(signature instanceof Signature, 'Second argument should be an instance of Signature');
+  var hash = this.magicHash();
+  var verified = ECDSA.verify(hash, signature, publicKey);
+  if (!verified) {
+    this.error = 'The signature was invalid';
+  }
+  return verified;
+};
+
+/**
+ * Will return a boolean of the signature is valid for a given bitcoin address.
+ * If it isn't the specific reason is accessible via the "error" member.
+ *
+ * @param {Address|String} bitcoinAddress - A bitcoin address
+ * @param {String} signatureString - A base64 encoded compact signature
+ * @returns {Boolean}
+ */
+Message.prototype.verify = function verify(bitcoinAddress, signatureString) {
+  $.checkArgument(bitcoinAddress);
+  $.checkArgument(signatureString && _.isString(signatureString));
+
+  if (_.isString(bitcoinAddress)) {
+    bitcoinAddress = Address.fromString(bitcoinAddress);
+  }
+  var signature = Signature.fromCompact(new Buffer(signatureString, 'base64'));
+
+  // recover the public key
+  var ecdsa = new ECDSA();
+  ecdsa.hashbuf = this.magicHash();
+  ecdsa.sig = signature;
+  var publicKey = ecdsa.toPublicKey();
+
+  var signatureAddress = Address.fromPublicKey(publicKey, bitcoinAddress.network);
+
+  // check that the recovered address and specified address match
+  if (bitcoinAddress.toString() !== signatureAddress.toString()) {
+    this.error = 'The signature did not match the message digest';
+    return false;
+  }
+
+  return this._verify(publicKey, signature);
+};
+
+/**
+ * Instantiate a message from a message string
+ *
+ * @param {String} str - A string of the message
+ * @returns {Message} A new instance of a Message
+ */
+Message.fromString = function(str) {
+  return new Message(str);
+};
+
+/**
+ * Instantiate a message from JSON
+ *
+ * @param {String} json - An JSON string or Object with keys: message
+ * @returns {Message} A new instance of a Message
+ */
+Message.fromJSON = function fromJSON(json) {
+  if (JSUtil.isValidJSON(json)) {
+    json = JSON.parse(json);
+  }
+  return new Message(json.message);
+};
+
+/**
+ * @returns {Object} A plain object with the message information
+ */
+Message.prototype.toObject = function toObject() {
+  return {
+    message: this.message
+  };
+};
+
+/**
+ * @returns {String} A JSON representation of the message information
+ */
+Message.prototype.toJSON = function toJSON() {
+  return JSON.stringify(this.toObject());
+};
+
+/**
+ * Will return a the string representation of the message
+ *
+ * @returns {String} Message
+ */
+Message.prototype.toString = function() {
+  return this.message;
+};
+
+/**
+ * Will return a string formatted for the console
+ *
+ * @returns {String} Message
+ */
+Message.prototype.inspect = function() {
+  return '<Message: ' + this.toString() + '>';
+};
+
+	bitcore.verifyMessage = function(message,signature,address){
+		
+		return Message(message).verify(address, signature);
+		
+	};
+	
+	bitcore.signMessage = function(message,privkey){
+		
+		var signature = Message(message).sign(privkey);
+		
+		return signature;
+	
+	};
 	bitcore.signrawtransaction = function(raw_tx, privkey, params){
 		var _requires = globals.requires;
 		var address = privkey.toAddress().toString();
@@ -44059,13 +44237,15 @@ module.exports={
 					var ischeck_address = null, ischeck_destination = null;
 					if( params.address != null ) ischeck_address = true;
 					if( params.destination != null ) ischeck_destination = true;
-					
+					Ti.API.info('params.address='+params.address);
+					Ti.API.info('params.destination='+params.destination);
 					for(var i = 0; i < decoded_tx.vout.length; i++){
 						var vout = decoded_tx.vout[i];
 						var type = vout.scriptPubKey.type;
 						
 						if( type === 'pubkeyhash' ){
 							var address = vout.scriptPubKey.addresses[0];
+							Ti.API.info('vout address='+address);
 							if( ischeck_address != null && address !== params.address ){
 								if( ischeck_destination != null ){
 									if( address !== params.destination ) ischeck_address = false;
@@ -44074,6 +44254,7 @@ module.exports={
 							}
 						}
 					}
+					Ti.API.info('ischeck_address='+ischeck_address);
 					
 					if( ischeck_address != null && !ischeck_address ) throw new Error('Invalid address error');
 					if( ischeck_destination != null && !ischeck_destination ) throw new Error('Invalid destination error');
@@ -44098,7 +44279,6 @@ module.exports={
 									pubkeys.push(new bitcore.PublicKey(asm[j]));
 								}
 							}
-							
 							var s = new bitcore.Script.buildMultisigOut(pubkeys, parseInt(asm[0]), {noSorting: true});
 							tx.addOutput(new bitcore.Transaction().createOutput({satoshis: value, script: s }));
 						}
@@ -44114,11 +44294,13 @@ module.exports={
 							params.callback(serialized);
 						}
 						catch(e2){
+							//Ti.API.info(e2);
 							if( params.fail != null ) params.fail();
 						}
 					}
 				}
 				catch(e){
+					Ti.API.info(e);
 					params.fail();
 				}
 				

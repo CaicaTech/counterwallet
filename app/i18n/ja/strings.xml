@@ -3,6 +3,8 @@
 	<string name="language">ja</string>
 	
 	<string name="appname">IndieSquare Wallet</string>
+	<string name="order_list_title">自分の注文履歴</string>
+	<string name="label_order_history">履歴</string>
 	<string name="label_about">このアプリについて</string>
 	<string name="label_load_tokens">読み込み中...</string>
 	<string name="label_holdAssets">保有アセット</string>
@@ -32,7 +34,7 @@
 	<string name="label_confirm">確認</string>
 	<string name="label_close">閉じる</string>
 	<string name="label_login">ログイン</string>
-	<string name="label_bitcoinaddress">ビットコインアドレス</string>
+	<string name="label_bitcoinaddress">アドレス\n(ビットコインやトークンをこのアドレスで受け取れます)</string>
 	<string name="label_qrcopy">タッチでコピーできます</string>
 	<string name="label_destination">送り先</string>
 	<string name="label_fee">手数料</string>
@@ -51,6 +53,14 @@
 	
 	<string name="text_createToken">トークンを発行します</string>
 	<string name="text_confirmIssuance">{token}を{quantity}発行します</string>
+	
+	<string name="title_settings_high_fee">優先度（高）</string>
+	<string name="title_settings_med_fee">優先度（中）</string>
+	<string name="title_settings_low_fee">優先度（下)</string>
+	
+	<string name="subtitle_settings_high_fee">平均承認時間 10分</string>
+	<string name="subtitle_settings_med_fee">平均承認時間 30分</string>
+	<string name="subtitle_settings_low_fee">平均承認時間 60分</string>
 	
 	
 	<string name="label_confirmorder">注文の確認</string>
@@ -92,11 +102,25 @@
 	<string name="text_use_line">LINEで伝える</string>
 	<string name="text_use_mail">メールで伝える</string>
 	
+	<string name="exchange_cancel_confirm_title">キャンセル</string>
+	<string name="exchange_cancel_confirm">本当にこの注文をキャンセルしますか？（マイナー手数料{fee}が発生します）</string>
+	<string name="exchange_cancel_cancel">キャンセルしない</string>
+    <string name="exchange_cancel_ok">キャンセルする</string>
+	<string name="label_exchange_completed">COMPLETED</string>
+	<string name="label_exchange_expired">EXPIRED</string>
+	<string name="label_exchange_cancelled">CANCELLED</string>
+	<string name="exchange_confirm_canceled_message">注文をキャンセルしています。キャンセルが完了するまで10分ほど時間がかかります。</string>
+	
+	<string name="label_exchange_canceling">キャンセル中</string>
+	
+	
+	<string name="label_tab_indieboard">indieBoard(β)</string>
 	<string name="label_exchange_xcp_balance">XCPの保有数</string>
 	<string name="label_exchange_instructions1">取引したいトークンを選んで下さい。</string>
 	<string name="label_exchange_instructions2">このトークンを買いたいか、売りたいか\nどちらかを選択して下さい。</string>
 	<string name="label_exchange_token_not_found">持っていないトークンを売ることはできません。\n他のトークンを選んでください。</string>
 	<string name="exchange_loading_closed">読み込み中...</string>
+	<string name="exchange_loading_history">読み込み中...</string>
 	<string name="exchange_loading_buy">読み込み中...</string>
 	<string name="exchange_loading_sell">読み込み中...</string>
 	<string name="label_buy_closed">買い</string>
@@ -113,7 +137,7 @@
 	<string name="label_exchange_select_token">トークン</string>
 	<string name="label_exchange_token">please select a token</string>
 	<string name="exchange_how_to_title">取引所について</string>
-	<string name="exchange_how_to">トークンとXCPの売買が取引所では可能です。\n\nトークンを選択し、そのトークンを「買う」、もしくは「売る」を選択してください。\n\n注文欄に、自分で直接価格を入力するか、オーダー表から価格をコピーすることもできます。\n\nわからなくなった場合は、右上の？マークでヘルプを確認してください！</string>
+	<string name="exchange_how_to">トークンとXCPの売買が取引所では可能です。\n\nトークンを選択し、そのトークンを「買う」、もしくは「売る」を選択してください。\n\n注文欄に、自分で直接価格を入力するか、オーダー表から価格をコピーすることもできます。</string>
 	<string name="exchange_tutorial">トークンとXCPの売買が取引所では可能です。\n\nトークンを選択し、そのトークンを「買う」、もしくは「売る」を選択してください。\n\n注文欄に、自分で直接価格を入力するか、オーダー表から価格をコピーすることもできます。\n\nわからなくなった場合は、\n\nそれぞれの列をタップすることで、価格をコピーできます。\n\n「最安購入価格」が、市場で最も安くトークンを購入できる価格です。\n\n最大販売価格」が、市場で最も高くトークンを販売できる価格です。</string>
 	
 	<string name="label_please_wait">読み込み中...</string>
@@ -154,7 +178,7 @@
 	<string name="label_approx">概算</string>
 	<string name="label_tab_home">トップ</string>
 	<string name="label_tab_ss">shapeshift</string>
-	<string name="label_get_xcp">トークンの作成には、0.5XCPが必要です。ShapeShiftページからXCPを購入することができます。</string>
+	<string name="label_get_xcp">XCPが不足しています。指定した名前のトークンを発行するには、0.5XCPが必要です。</string>
 	<string name="label_buy_xcp">XCPを購入</string>
 	<string name="label_tab_exchange">取引所</string>
 	<string name="label_tab_history">履歴</string>
@@ -183,7 +207,8 @@
 	<string name="text_history_order">{give_quantity} {give_asset} で {get_quantity} {get_asset}を入手します</string>
 	<string name="text_history_order_sold">{give_quantity} {give_asset} で {get_quantity} {get_asset}を入手します</string>
 	<string name="text_history_order_bought">{give_quantity} {give_asset} で {get_quantity} {get_asset}を入手します</string>
-	
+	<string name="text_history_cancel_buy">次の注文をキャンセルしました。<br />{price} XCPで{quantity} {asset}の買い注文</string>
+	<string name="text_history_cancel_sell">次の注文をキャンセルしました。<br />{price} XCPで{quantity} {asset}の売り注文</string>
 	<string name="text_history_send">{quantity} {asset}を下記のアドレスへ送りました</string>
 	<string name="text_history_receive">{quantity} {asset}を下記のアドレスから受け取りました</string>
 	<string name="text_history_issuance">{asset}を{quantity}発行しました。</string>
@@ -211,7 +236,7 @@
 	<string name="label_privecypolicy2">ご利用を開始した時点で、同意したものとさせて頂きます</string>
 	<string name="text_withmessage">メッセージが添付されています</string>
 	<string name="text_unreadable">ウォレットアドレスを認識できませんでした...</string>
-	<string name="text_noregisted">登録されていません</string>
+	<string name="text_noregisted">プロフィール名</string>
 	<string name="label_rename">名前変更</string>
 	<string name="title_rename">名前変更</string>
 	<string name="title_buy_XCP">XCPを購入</string>
@@ -226,6 +251,7 @@
 	
 	<string name="text_desc_username">お好きな名前で登録できます</string>
 	<string name="text_desc_fiat">通貨情報を選ぶことが出来ます</string>
+	<string name="text_desc_fee">送信手数料の選択</string>
 	<string name="text_desc_passphrase">復元用のパスフレーズを確認することができます</string>
 	<string name="text_desc_passcode">パスコードを変更する</string>
 	
@@ -329,12 +355,13 @@
 	<string name="text_reorganisation">申し訳ありませんが、再編成が完了するまで\nしばらくお待ち下さい...</string>
 	<string name="text_reorganisation2">(30分程かかる場合があります)</string>
 	
-	<string name="label_linkage">連携(β版)</string>
+	<string name="label_linkage">連携</string>
 	<string name="text_signerror">署名できませんでした...</string>
 	<string name="text_readerror">正常にデータを取得できませんでした...</string>
 	<string name="text_authentication">認証してください</string>
 	
-	<string name="draw_explain">復元パスフレーズを生成します。\nメーターが一杯になるまで、画面をなぞって下さい。</string>
+	<string name="draw_title">自分だけの安全なパスフレーズを生成する必要があります。パスフレーズはトークンやビットコインを復元する時に必要で、非常に重要なものです</string>
+	<string name="draw_explain">安全なパスフレーズを生成するために、ランダム性を利用します。\n指でスクリーンをランダムにこすってみてください</string>
 	<string name="text_inputbyeach">単語毎に入力する</string>
 	<string name="text_word_num">{num} 語目</string>
 	<string name="text_inputbyeach_next">次へ</string>
@@ -395,7 +422,7 @@
 	<string name="label_create_token_desc">[必須]トークンの名前です。無料トークンをオンにすると、Aから始まるランダム数字のトークンを無料で生成できます。</string>
 	<string name="label_create_quantity_desc">[必須]トークンの発行量です。後から追加で発行することも可能です。</string>
 	<string name="label_create_description_desc">[任意]トークンについての説明です。後から変更も可能です。</string>
-	<string name="label_create_website_desc">[任意]ウェブサイトのURLを入力できます・</string>
+	<string name="label_create_website_desc">[任意]ウェブサイトのURLを入力できます。</string>
 	<string name="label_create_image_desc">[任意]トークンの画像を設定することができます。後から変更も可能です。</string>
 	<string name="label_create_divisible_desc">[必須]0.1, 0.05といった小数の単位で送受信可能になります。整数のみにする場合はOFFにして下さい。(後から変更出来ません!)</string>
 
@@ -403,4 +430,49 @@
 	<string name="label_ex_quantity_issue">例）100</string>
 	<string name="label_ex_description">例）IndieSquare公式コインです</string>
 	<string name="label_ex_website">例）http://</string>
+
+	<string name="label_permission_CAMERA">重要</string>
+	<string name="text_permission_CAMERA">送り先のQRコードを読み込む為にカメラの起動を許可して下さい。</string>
+	
+	<string name="text_access_deny">起動に失敗しました。再起動して下さい。</string>
+	<string name="label_permission_deny_camera">カメラの起動が許可されていません。端末の設定からIndieSquare Walletのカメラ起動を許可して下さい。</string>
+	<string name="label_go_settings">設定する</string>
+	
+	<string name="label_callback_getaddress">認証</string>
+	<string name="text_callback_getaddress">"{name}"が次のアドレスの送信を求めています。\n{address}\n許可しますか？</string>
+	
+	<string name="text_tokenly_desc">アドレス\n{address}\nを登録します</string>
+	<string name="text_tokenly_confirm">Tokenlyの画面を確認してください</string>
+	<string name="text_tokenly_sent">アドレス登録完了</string>
+	<string name="label_success_intro_1">アカウントが無事作成されました</string>
+	<string name="label_success_intro_2">事前にいくつか設定が必要です（もう少しで準備完了です・・・！）</string>
+	<string name="text_success_intro_button">次へ</string>
+	
+	<string name="label_pass_intro_1">以下の復元パスフレーズを記録してください！</string>
+	<string name="label_pass_intro_3">スマホを紛失した時などに、このパスフレーズを使ってコインの復元が出来ます。（パスフレーズは後で設定からも確認できます。）</string>
+	<string name="label_pass_intro_4">安全に保管し、\n誰にも見せないでください！</string>
+	<string name="label_pass_intro_5">\nもし誰かにこのパスフレーズが漏れると、ウォレット内のコインを盗まれる可能性があります</string>
+	<string name="text_pass_intro_button">記録完了</string>
+	
+	<string name="label_passcode_intro_1">4桁のパスコードを設定する</string>
+	<string name="label_passcode_intro_2">4桁のパスコード（ピンナンバー）はビットコインやトークンの送信時に必要です</string>
+	<string name="text_passcode_intro_button">パスコードを設定</string>
+	
+	<string name="label_touchid_intro_1">touch IDを設定しますか？</string>
+	<string name="text_touchid_intro_button">touch IDを設定</string>
+	<string name="text_touchid_intro_button_skip">とばす</string>
+	
+	<string name="label_complete_intro_1">IndieSquare Walletはビットコイン2.0ウォレットで、ビットコインの送受信だけでなく以下のような機能が使えます</string>
+	<string name="label_complete_intro_2">トークンの送受信</string>
+	<string name="label_complete_intro_3">自分独自のトークンの作成</string>
+	<string name="label_complete_intro_4">トークンのトレード</string>
+	<string name="label_complete_intro_5">XCPの購入</string>
+	<string name="label_complete_intro_review">IndieSquare Walletの設定が\n無事完了しました！</string>
+	
+	<string name="text_complete_intro_button">さあ始めましょう！</string>
+	<string name="label_box_1">このページで自分のビットコインやトークンの残高を確認できます</string>
+	<string name="label_box_2">ビットコインやトークンはこのボタンから\n送ることが出来ます</string>
+	<string name="label_box_3">ビットコインやトークンの受取りは\nこちらのページから可能です</string>
+	
+	<string name="text_error_order">注文に失敗しました。少し後で再度試してください。</string>
 </resources>

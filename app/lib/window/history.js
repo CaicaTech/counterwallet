@@ -80,6 +80,9 @@
 				
 				for( var i = 0; i < result.transactions.length; i++ ){
 					var val = result.transactions[i];
+					if(val.type == 'cancel'){
+						continue;
+					}
 					var box = createBox({ height: 90 });
 					box.top = 10;
 					
@@ -91,6 +94,15 @@
 						}
 						else{
 							history = L('text_history_order_sold').format({ 'give_quantity': val.give_quantity, 'give_asset': val.give_asset, 'get_quantity': val.get_quantity, 'get_asset': val.get_asset});
+						}
+					}
+					else if( val.type === 'cancel' ){
+						var price = val.give_quantity / val.get_quantity;
+						if( val.give_asset === 'XCP'){
+							history = L('text_history_cancel_buy').format({ 'price': price, 'asset': val.get_asset, 'quantity': val.get_quantity });
+						}
+						else{
+							history = L('text_history_cancel_sell').format({ 'price': price, 'asset': val.give_asset, 'quantity': val.give_quantity });
 						}
 					}
 					else if( val.type === 'send' ){
@@ -106,7 +118,7 @@
 						}
 					}
 					else if( val.type === 'issuance' ){
-						if( val.transfer ) history = L('text_history_issuance_transfer').format({ 'asset': val.asset, 'from': val.source });
+						if( val.transfer && val.source !== _requires['cache'].data.address ) history = L('text_history_issuance_transfer').format({ 'asset': val.asset, 'from': val.source });
 						else history = L('text_history_issuance').format({ 'quantity': val.quantity, 'asset': val.asset, 'description': val.description });
 					}
 					else if( val.type === 'dividend' ){
@@ -115,6 +127,7 @@
 					else if( val.type === 'get_dividend' ){
 						history = L('text_history_get_dividend').format({ 'dividend_asset': val.dividend_asset, 'asset': val.asset, 'quantity_per_unit': (val.quantity_per_unit * 100) });
 					}
+					else{}
 					
 					var color = '#6db558';
 					if(val.type == 'send') color = '#e54353';

@@ -17,7 +17,7 @@ exports.run = function(){
 	win.origin.add(top_bar);
 	
 	var back_home = _requires['util'].makeLabel({
-			text:L('label_tab_home'),
+			text:L('label_back'),
 			color:"white",
 			font:{ fontSize:15, fontWeight:'normal'},
 			textAlign: 'right',
@@ -100,7 +100,7 @@ exports.run = function(){
 	});
 	view.add(section);
 	
-	var box_user_name = createBox({ icon: 'icon_noimage.png', height: 40 });
+	/*var box_user_name = createBox({ icon: 'icon_noimage.png', height: 40 });
 	box_user_name.top = 10;
 	var label_user_name = _requires['util'].makeLabel({
 		text: globals.user_name || L('text_noregisted'),
@@ -150,7 +150,7 @@ exports.run = function(){
 	});
 	view.add(box_user_name);
 	view.add(createDescBox(L('text_desc_username')));
-	
+	*/
 	var box_passphrase = createBox({ icon: 'icon_settings_password.png', height: 45 });
 	box_passphrase.top = 10;
 	view.add(box_passphrase);
@@ -182,18 +182,9 @@ exports.run = function(){
 							var dialog2 = _requires['util'].createDialog({
 								title: L('label_passphrase'),
 								message: _requires['cache'].data.passphrase,
-								buttonNames: [L('label_close'), L('label_copy')]
+								buttonNames: [L('label_close')]
 							});
-							dialog2.addEventListener('click', function(e){
-								if( e.index != e.source.cancel ){
-									Ti.UI.Clipboard.setText( _requires['cache'].data.passphrase );
-									_requires['util'].createDialog({
-										title: L('label_copied'),
-										message: L('text_copied'),
-										buttonNames: [L('label_close')]
-									}).show();
-								}
-							});
+							
 							dialog2.show();
 						}, time);
 					}
@@ -265,6 +256,120 @@ exports.run = function(){
 		box_pin.opacity = 1.0;
 		box_description.opacity = 1.0;
 	}
+	var display_height = _requires['util'].getDisplayHeight();
+	
+	var close = _requires['util'].makeLabel({
+		text : 'close',
+		color : 'white',
+		font : {
+			fontFamily : 'Helvetica Neue',
+			fontSize : 15,
+			fontWeight : 'bold'
+		},
+		height : 30,
+		right : 10
+	});
+	var picker_toolbar = Ti.UI.createView({
+		width: '100%',
+		height: (OS_ANDROID)? 50: 40,
+		backgroundColor: '#e54353'
+	});
+	picker_toolbar.add(close);
+	var currencies = _requires['util'].createTableList({
+		backgroundColor: 'white',
+		width: '100%', height: 350,
+		top:0,
+		rowHeight: 50
+	});
+	currencies.addEventListener('click', setCurrency);
+	var picker1 = _requires['util'].group({
+		"toolbar": picker_toolbar,
+		"picker": currencies
+	}, 'vertical');
+	if(OS_ANDROID) picker1.top = display_height;
+	else picker1.bottom = -390;
+	
+	close.addEventListener('click',function() {
+		picker1.animate(slide_out);
+	});
+	
+	win.origin.add(picker1);
+	
+	
+	
+	function addCurrencies() {
+		var tikers = globals.tiker;
+		currenciesArray = [];
+		currencies.setRowDesign(tikers, function(row, val) { //why is key visible here?
+			if( key !== 'XCP' ) {
+				currenciesArray.push(key);
+				var label = Ti.UI.createLabel({
+					text : key,
+					font : {
+						fontFamily : 'HelveticaNeue-Light',
+						fontSize : 20,
+						fontWeight : 'normal'
+					},
+					color : 'black',
+					width : 'auto',
+					height : 'auto',
+					left :10
+				});
+				row.add(label);
+				return row;
+			}
+		});
+	};
+	
+	addCurrencies();
+	var slide_in;
+	var slide_out;
+	if( OS_ANDROID ){
+		
+		slide_in = Ti.UI.createAnimation({top: display_height - 400, duration:200});
+		slide_out = Ti.UI.createAnimation({top: display_height, duration:200});
+	}
+	else {
+		
+		slide_in = Ti.UI.createAnimation({bottom: 0, duration:200});
+		slide_out = Ti.UI.createAnimation({bottom: -390, duration:200});
+	}
+
+	var box_currency = createBox({ icon: 'icon_settings_currency.png', height: 45 });
+	box_currency.top = 10;
+	view.add(box_currency);
+	view.add(createDescBox(L('text_desc_fiat')));
+	
+	var current_currency = _requires['cache'].data.currncy;
+	var label_current_currency = _requires['util'].makeLabel({
+		text: current_currency,
+		font:{ fontSize: 15 },
+		left: 60
+	});
+	box_currency.add(label_current_currency);
+
+	box_currency.addEventListener('click', function(){
+		addCurrencies();
+		picker1.animate(slide_in);
+	
+	});
+	
+	function setCurrency(e) {
+		var selected_currency = currenciesArray[e.index];
+		label_current_currency.text = _requires['cache'].data.currncy = selected_currency;
+		globals.loadBalance(true);
+		if( globals.getOrders != null ) globals.getOrders();
+		_requires['cache'].save();
+		picker1.animate(slide_out);
+	}
+	
+	
+	
+	
+	
+	
+	
+	
 	if( _requires['cache'].data.isTouchId ) pin_off();
 	
 	if( OS_IOS ){
@@ -412,7 +517,7 @@ exports.run = function(){
 		dialog.show();
 	});
 	
-	var box_password = createBox({ icon: 'icon_settings_easypass.png', height: 45 });
+	/*var box_password = createBox({ icon: 'icon_settings_easypass.png', height: 45 });
 	box_password.top = 10;
 	view.add(box_password);
 	view.add(createDescBox(L('text_desc_password')));
@@ -463,8 +568,7 @@ exports.run = function(){
 		});
 		dialog.show();
 	});
-
-	
+	*/
 	var section = _requires['util'].makeLabel({
 		text: L('text_section_other'),
 		font:{ fontSize: 13 },

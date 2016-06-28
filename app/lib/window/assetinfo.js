@@ -59,12 +59,12 @@ exports.run = function( params ){
 		'callback': function( result ){
 			var readonly = !(_requires['cache'].data.address === result.issuer);
 			function createInfo(json){
-				function createFieldBox(){
+				function createFieldBox(fontSize){
 					var box = _requires['util'].group({
 						title: _requires['util'].makeLabel({
 							text: '',
 							left: 10,
-							font:{ fontSize: 10 },
+							font:{ fontSize:10 },
 							color: '#a6a8ab'
 						}),
 						field: _requires['util'].makeTextField({
@@ -73,7 +73,8 @@ exports.run = function( params ){
 							height: 35,
 							left: 15,
 							border: 'hidden',
-							keyboardType: Ti.UI.KEYBOARD_DECIMAL_PAD,
+							font:{ fontSize:fontSize },
+							keyboardType: Ti.UI.KEYBOARD_TYPE_DECIMAL_PAD,
 						})
 					}, 'vertical');
 					box.width = '100%';
@@ -112,33 +113,38 @@ exports.run = function( params ){
 					result.description = json.description;
 				}
 				
-				var box_asset = createFieldBox();
+				var box_asset = createFieldBox(16);
 				box_asset.title.text = L('label_info_tokenname');
 				box_asset.field.value = result.asset;
+				box_asset.field.editable = false;
 				box_asset.top = 10;
 				
-				var box_owner = createFieldBox();
+				var box_owner = createFieldBox(14);
 				box_owner.title.text = L('label_info_ownedby');
 				box_owner.field.value = result.issuer;
+				box_owner.field.editable = false;
 				box_owner.top = 10;
 				
-				var box_description = createFieldBox();
+				var box_description = createFieldBox(16);
 				box_description.title.text = L('label_info_description');
 				box_description.field.value = result.description;
 				box_description.top = 10;
+				box_description.field.editable = false;
 				
 				if( json != null ){
 					if( json.website != null ){
-						var box_website = createFieldBox();
+						var box_website = createFieldBox(16);
 						box_website.title.text = L('label_info_web');
 						box_website.field.value = json.website;
+						box_website.field.editable = false;
 						box_website.top = 10;
 					}
 				}
 				
-				var box_supply = createFieldBox();
+				var box_supply = createFieldBox(16);
 				box_supply.title.text = L('label_info_toalissued');
 				box_supply.field.value = result.supply;
+				box_supply.field.editable = false;
 				box_supply.top = 10;
 				
 				var box_divisible = createBox();
