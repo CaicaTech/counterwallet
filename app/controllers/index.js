@@ -3,7 +3,6 @@ require('icons');
 var cache = globals.requires['cache'];
 if( cache.load() ){
 	Ti.API.requires = globals.requires;
-	
 	var network = globals.requires['network'];
 	var b = require('crypt/bcrypt');
 	bcrypt = new b();
@@ -57,7 +56,7 @@ if( cache.load() ){
 		if( OS_IOS ) globals.createTab();
 		globals.windows['home'].run();
 	}
-	else globals.windows['login'].run();
+	else globals.windows['signin'].run();
 }
 else{
 	alert(L('text_access_deny') + '\nError:1000');

@@ -84,7 +84,7 @@
 	
 	<string name="label_newwallet">Create a New Wallet</string>
 	<string name="label_signin">Sign In</string>
-	<string name="text_loginasuser">Already have a passphrase?</string>
+	<string name="text_loginasuser">Already have a Recovery phrase?</string>
 	
 	<string name="text_copied">Copied</string>
 	<string name="text_copied_message">Address copied to clipboard</string>
@@ -95,7 +95,7 @@
 	
 	<string name="subtitle_settings_high_fee">Estimated confirmation time: 10 mins</string>
 	<string name="subtitle_settings_med_fee">Estimated confirmation time: 30 mins</string>
-	<string name="subtitle_settings_low_fee">Estimated confirmation time: 60 mins</string>
+	<string name="subtitle_settings_low_fee">Estimated confirmation time: over 60 mins</string>
 	
 	<string name="label_exchange_instructions1">select which token you would like to buy or sell</string>
 	<string name="label_exchange_instructions2">select whether you'd like to buy or sell</string>
@@ -232,7 +232,7 @@
 	<string name="text_desc_username">Change your name</string>
 	<string name="text_desc_fiat">Choose your preferred currency</string>
 	<string name="text_desc_fee">Default mining fee when sending a transaction</string>
-	<string name="text_desc_passphrase">Check your passphrase</string>
+	<string name="text_desc_passphrase">Check your Recovery phrase</string>
 	<string name="text_desc_passcode">Change your passcode</string>
 	<string name="text_desc_fingerprint">Authorize transactions using your fingerprint</string>
 	<string name="text_desc_identifier">The ID identifies your account</string>
@@ -255,13 +255,12 @@
 	
 	<string name="label_reload">Reloading</string>
 	
-	<string name="label_passphrase">Passphrase</string>
+	<string name="label_passphrase">Recovery phrase</string>
 	<string name="label_getting_price">getting price...</string>
-	<string name="label_passphrase_title">Write down this recovery passphrase</string>
-	<string name="text_passphrase">"{passphrase}"\n\nIf you lose this passphrase nobody will be able to restore your bitcoin and tokens. Please write it down.</string>
+	<string name="text_passphrase">"{passphrase}"\n\nIf you lose this Recovery phrase nobody will be able to restore your bitcoin and tokens. Please write it down.</string>
 	
 	<string name="label_passphrase_ok">I wrote it down</string>
-	<string name="text_passphrase_re">You can see your passphrase in the settings page</string>
+	<string name="text_passphrase_re">You can see your Recovery phrase in the settings page</string>
 	<string name="label_passphrase_re"> Look again</string>
 	<string name="label_passphrase_continue">I definitely wrote it down</string>
 	
@@ -333,7 +332,7 @@
 	<string name="text_shapeshift_more">please spend more than {amount}{asset}</string>
 	<string name="text_shapeshift_less">please spend less than {amount}{asset}</string>
 	
-	<string name="text_passphrase_q">Show the passphrase?</string>
+	<string name="text_passphrase_q">Show the Recovery phrase?</string>
 	<string name="text_password_q">Show the password?</string>
 	<string name="label_show">Show!</string>
 	<string name="label_reissue">Issue more units</string>
@@ -347,7 +346,7 @@
 	
 	<string name="text_webfailed">Failed to read...</string>
 	<string name="label_signout">Sign out</string>
-	<string name="text_signout">Are you sure you want to sign out? We strongly recommend that you backup the recovery passphrase.</string>
+	<string name="text_signout">Are you sure you want to sign out? We strongly recommend that you backup the Recovery phrase.</string>
 	 
 	<string name="label_reorganisation">Blockchain reorganisation</string>
 	<string name="text_reorganisation">Apologies, please wait while the service is being re-synced...</string>
@@ -359,7 +358,7 @@
 	<string name="text_readerror">Could not get a datas...</string>
 	<string name="text_authentication">Authentication</string>
 	
-	<string name="draw_title">You need to generate a secure random passphrase which will be used to store and restore your bitcoin and tokens.</string>
+	<string name="draw_title">You need to generate a secure random Recovery phrase which will be used to store and restore your bitcoin and tokens.</string>
 	<string name="draw_explain">In order to make sure this is as secure and random as possible\nRUB THE SCREEN like crazy!</string>
 	
 	<string name="text_inputbyeach">INPUT WORD BY WORD</string>
@@ -421,7 +420,7 @@
 	<string name="label_create_token_desc">[Required]Token name. When you turn on "Free token", you can generate a free token of random numbers that begins with the letter A.</string>
 	<string name="label_create_quantity_desc">[Required]Number of tokens to be created, you can create more later.</string>
 	<string name="label_create_description_desc">[Optional]Then token's description. It can be changed later.</string>
-	<string name="label_create_website_desc">[Optional]Enter your website url here.</string>
+	<string name="label_create_website_desc">[Optional]Enter your website url here. It can be changed later.</string>
 	<string name="label_create_image_desc">[Optional]Add an image to your token. It can be changed later.</string>
 	<string name="label_create_divisible_desc">[Required]Divisible tokens can be subdivided into decimal places. This cannot be changed later. If unsure, we recommend keeping it divisible.</string>
 	
@@ -474,4 +473,6 @@
 	<string name="text_callback_getaddress">"{name}" would like to use the address \n{address}\nDo you accept it?</string>
 	
 	<string name="text_error_order">Order error. Please try again later.</string>
+	<string name="text_error_notsecure">Could not get the data for the security. Please relaunch this app.</string>
+	<string name="label_unconfirmed">Unconfirmed</string>
 </resources>

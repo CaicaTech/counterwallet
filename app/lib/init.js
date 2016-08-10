@@ -30,7 +30,7 @@ var w = new Array(
 	'assetholders.js',
 	'assetinfo.js',
 	'createtoken.js',
-	'login.js',
+	'signin.js',
 	'home.js',
 	'settings.js',
 	'send.js',
@@ -124,9 +124,8 @@ function reorg_finish(){
 
 var service = null;
 globals.backgroundfetch = function (e) {
-	globals.requires['network'].connect({
-		'method': 'check_reorg',
-		'post': {},
+	globals.requires['network'].connectGETv2({
+		'method': 'status/reorg',
 		'callback': function( result ){
 			if( !result.isReorg ){
 				reorg_finish();
@@ -334,7 +333,19 @@ globals._parseArguments = function( url, is_fromQR ) {
 					});
 					dialog.addEventListener('click', function(e){
 						if( e.index != e.source.cancel ){
-							if( 'msg' in params ){
+							if( 'channel' in params ){
+								var data = {
+									'address': address,
+								};
+								_requires['pubsub'].publish({
+									'channel' : params.channel,
+									'message' : JSON.stringify(data),
+									'callback': function(m){
+										Ti.API.info(JSON.stringify(m));
+									}
+								});
+							}
+							else if( 'msg' in params ){
 								try{
 									var sig = _requires['bitcore'].signMessage(params['msg']);
 									Ti.Platform.openURL(params['x-success'] + '://sendaddress?address=' + _requires['cache'].data.address+'&msg='+params['msg']+'&sig='+sig);
@@ -506,9 +517,7 @@ globals._parseArguments = function( url, is_fromQR ) {
 							else if( func === 'sign' ){
 								globals.requires['pubsub'].subscribe({
 								    channel  : params.channel + 'receive',
-								    connect  : function(){
-								    	Ti.API.info('Sub connect');
-								    },
+								    connect  : function(){},
 								    callback : function( unsignd_hex ) {
 								    	globals.requires['bitcore'].sign(unsignd_hex, {
   											'callback': function(signed_tx){

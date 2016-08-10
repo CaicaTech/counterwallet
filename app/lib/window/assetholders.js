@@ -50,13 +50,8 @@ exports.run = function( params ){
 	var total_holders = 0;
 	
 	var loading = _requires['util'].showLoading(main_view, { width: Ti.UI.FILL, height: Ti.UI.FILL, message: L('loading_holders') });
-	_requires['network'].connect({
-		'method': 'get_holders',
-		'post': {
-			id: _requires['cache'].data.id,
-			address: _requires['cache'].data.address,
-			asset: params.asset
-		},
+	_requires['network'].connectGETv2({
+		'method': 'tokens/' + params.asset + '/holders',
 		'callback': function( result ){
 			total_holders = result.count;
 			
@@ -87,8 +82,8 @@ exports.run = function( params ){
 				return box;
 			}
 			
-			for( var i = 0; i < result.holders.length; i++ ){
-				var val = result.holders[i];
+			for( var i = 0; i < result.length; i++ ){
+				var val = result[i];
 				
 				var box = createBox({ height: 70 });
 				box.top = 10;

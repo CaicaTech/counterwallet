@@ -51,11 +51,8 @@ exports.run = function( params ){
 	main_view.add(view);
 		
 	var loading = _requires['util'].showLoading(main_view, { width: Ti.UI.FILL, height: Ti.UI.FILL, message: L('loading_assetinfo')});
-	_requires['network'].connect({
-		'method': 'get_asset_info',
-		'post': {
-			asset: params.asset
-		},
+	_requires['network'].connectGETv2({
+		'method': 'tokens/' + params.asset,
 		'callback': function( result ){
 			var readonly = !(_requires['cache'].data.address === result.issuer);
 			function createInfo(json){
@@ -102,20 +99,20 @@ exports.run = function( params ){
 					return box;
 				}
 				
+				var image = Ti.UI.createImageView({
+					image: unescape(result.token_image_url),
+					width: 50, height: 50,
+					top: 10
+				});
+				view.add(image);
+				
 				if( json != null && json.image != null ){
-					if( !json.image.match(/^https?:\/\//) ) json.image = 'https://' + json.image;
-					var image = Ti.UI.createImageView({
-						image: json.image,
-						width: 50, height: 50,
-						top: 10
-					});
-					view.add(image);
 					result.description = json.description;
 				}
 				
 				var box_asset = createFieldBox(16);
 				box_asset.title.text = L('label_info_tokenname');
-				box_asset.field.value = result.asset;
+				box_asset.field.value = result.token;
 				box_asset.field.editable = false;
 				box_asset.top = 10;
 				
@@ -143,7 +140,7 @@ exports.run = function( params ){
 				
 				var box_supply = createFieldBox(16);
 				box_supply.title.text = L('label_info_toalissued');
-				box_supply.field.value = result.supply;
+				box_supply.field.value = result.quantity;
 				box_supply.field.editable = false;
 				box_supply.top = 10;
 				
@@ -178,7 +175,7 @@ exports.run = function( params ){
 		       		borderRadius:5
 		  		});
 		  		button_holders.addEventListener('click', function() {
-			   		 _windows['assetholders'].run( { 'asset': params.asset } );
+			   		 _windows['assetholders'].run( { 'asset': params.asset, 'divisible': result.divisible } );
 				});
 		  		view.add(button_holders);
 				loading.removeSelf();
@@ -186,8 +183,12 @@ exports.run = function( params ){
 			if( /.*\.json/.test(result.description) ){
 				_requires['network'].getjson({
 					uri: result.description,
-					callback: function(json){ createInfo(json); },
-					onError: function(){ createInfo(); }
+					callback: function(json){
+						createInfo(json);
+					},
+					onError: function(){
+						createInfo();
+					}
 				});
 			}
 			else createInfo();

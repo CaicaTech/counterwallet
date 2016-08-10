@@ -29,67 +29,47 @@ function setImageQR(){
 		home_title_center.top = 20;
 	}
 	
-	function createQRcode( qr_data ){
-		
-		var addressQR = _requires['cache'].data.address;
-		var text_title_rec = _requires['util'].group({
-			title: _requires['util'].makeLabel({
-				text: L('label_bitcoinaddress'),
-				top: 0,
-				font:{ fontSize: 12 }
-			}),
-			address: _requires['util'].makeLabel({
-				text: addressQR,
-				top: 10,
-				font:{ fontSize: 13 }
-			}),
-			view_qr: _requires['util'].makeImageButton({
-			    image: qr_data,
-			    width: 290, height: 290,
-			    top: 0, left: 0,
-			    listener: function(){
-			    	//if(activeTab == 2){ ??
-					Ti.UI.Clipboard.setText( addressQR );
-					_requires['util'].createDialog({
-						message:L('text_copied_message'),
-						buttonNames: [L('label_close')]
-					}).show();
-					//}
-				}
-			}),
-			taptocopy: _requires['util'].makeLabel({
-				text:L('label_qrcopy'),
-				textAlign: 'left',
-				font:{fontFamily: 'HelveticaNeue-Light', fontSize:15, fontWeight:'light'},
-				top: 0
-			})
-		}, 'vertical');
-		
-		view_box.add(text_title_rec);
-	}
+	var addressQR = _requires['cache'].data.address;
 	
-	var f = Ti.Filesystem.getFile(Ti.Filesystem.applicationDataDirectory, 'qr_address.png');
-	if( !f.exists() ){
-		_requires['network'].connect({
-			'method': 'create_qrcode',
-			'binary': true,
-			'post': {
-				id: _requires['cache'].data.id,
-				address: _requires['cache'].data.address
-			},
-			'callback': function( result ){
-				f.write( result );
-				createQRcode(f);
-			},
-			'onError': function( error ){
-				alert(error);
-			}
-		});
-	}
-	else{
-		createQRcode(f);
-	}
+	var qrcode = require('require/qrcode').QRCode({
+	    typeNumber: 4,
+	    errorCorrectLevel: 'M'
+	});
+	var qrcodeView = qrcode.createQRCodeView({
+	    width: 250,
+	    height: 250,
+	    margin: 15,
+	    text: addressQR
+	});
+	var text_title_rec = _requires['util'].group({
+		title: _requires['util'].makeLabel({
+			text: L('label_bitcoinaddress'),
+			top: 0,
+			font:{ fontSize: 12 }
+		}),
+		address: _requires['util'].makeLabel({
+			text: addressQR,
+			top: 10,
+			font:{ fontSize: 13 }
+		}),
+		view_qr: qrcodeView,
+		taptocopy: _requires['util'].makeLabel({
+			text:L('label_qrcopy'),
+			textAlign: 'left',
+			font:{fontFamily: 'HelveticaNeue-Light', fontSize:15, fontWeight:'light'},
+			top: 0
+		})
+	}, 'vertical');
 	
+	text_title_rec.view_qr.addEventListener('touchend', function(){
+		Ti.UI.Clipboard.setText( addressQR );
+		_requires['util'].createDialog({
+			message:L('text_copied_message'),
+			buttonNames: [L('label_close')]
+		}).show();
+	});
+	
+	view_box.add(text_title_rec);
 }
 view_receive.add(view_box);
 view_receive.add(top_bar_receive);

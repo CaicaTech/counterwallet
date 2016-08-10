@@ -138,7 +138,7 @@ function initRNG( packages ) {
     var rng_get_byte= function (seed) {
 	    if ( rng_state == null ) {
 	    	rng_seed_int(seed + globals.Accelerometer);
-			rng_state = Arcfour.create();
+	    	rng_state = Arcfour.create();
 			rng_state.init( rng_pool );
 			for(rng_pptr = 0; rng_pptr < rng_pool.length; ++rng_pptr) rng_pool[rng_pptr] = 0;
 			rng_pptr = 0;
@@ -148,7 +148,9 @@ function initRNG( packages ) {
     
     var SecureRandom = function () { };
     SecureRandom.prototype.nextBytes = function (ba, seed) {
-    	for( var i = 0; i < ba.length; ++i ) ba[i] = rng_get_byte(seed);
+    	for( var i = 0; i < ba.length; ++i ){
+    		ba[i] = rng_get_byte(seed);
+    	}
     };
 
     // initialize

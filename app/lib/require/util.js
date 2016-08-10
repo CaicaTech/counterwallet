@@ -241,6 +241,10 @@ module.exports = (function() {
 	self.openScanner = function( v ){
 		function open(){
 			var scanditsdk = require("com.mirasense.scanditsdk");
+			if( OS_ANDROID ){
+				scanditsdk.appKey = "xKpFXhlXEeSO2ceePbErdDelCupO9KN+wZMNnAMjDQU"; 
+				scanditsdk.cameraFacingPreference = 0;
+			}
 			var window = Ti.UI.createWindow({  
 				title:'Scan QRcode',
 				navBarHidden: true
@@ -249,7 +253,8 @@ module.exports = (function() {
 				width: Ti.UI.FILL,
 				height: Ti.UI.FILL
 			});
-			picker.init("xKpFXhlXEeSO2ceePbErdDelCupO9KN+wZMNnAMjDQU", 0);
+			if( OS_ANDROID ) picker.init();
+			else picker.init("xKpFXhlXEeSO2ceePbErdDelCupO9KN+wZMNnAMjDQU", 0);
 			picker.showSearchBar(true);
 			picker.showToolBar(true);
 			picker.setSuccessCallback(function(e) {
@@ -994,7 +999,7 @@ module.exports = (function() {
 					apply( params.method(text) );
 				}
 				else if( params.method != null ){
-					network.connect({
+					network.connectPOSTv2({
 						'method': params.method,
 						'post': {
 							keyword: text
@@ -1142,14 +1147,14 @@ module.exports = (function() {
 	self.checkAssetImage = function( params, uri ){
 		var image_url =  uri || '';
 		
-		if( params.info.asset === 'BTC' ){
+		if( params.info.token === 'BTC' ){
 			image_url = '/images/asset_bitcoin.png';
 		}
-		else if( params.info.asset == 'XCP' ){
+		else if( params.info.token == 'XCP' ){
 			image_url = '/images/asset_xcp.png';
 		}
 		else if( image_url.length <= 0 ){
-			image_url = 'https://counterpartychain.io/content/images/icons/' + params.info.asset.toLowerCase() + '.png';
+			image_url = 'https://counterpartychain.io/content/images/icons/' + params.info.token.toLowerCase() + '.png';
 		}
 		else{
 			if( !image_url.match(/^https?:\/\//) ) image_url = 'https://' + image_url;
@@ -1167,7 +1172,7 @@ module.exports = (function() {
 		
 		var icon = asset_image;
 		if( OS_IOS && base64encoded == undefined ){
-			asset_image.image = 'https://counterpartychain.io/content/images/icons/'+params.info.asset.toLowerCase()+'.png';
+			asset_image.image = 'https://counterpartychain.io/content/images/icons/'+params.info.token.toLowerCase()+'.png';
 			blob = asset_image.toBlob();
 			base64encoded = Ti.Utils.base64encode(blob);
 		}
@@ -1178,8 +1183,8 @@ module.exports = (function() {
 			
 			icon = self.group({
 				'icon': asset_image,
-				'char': (params.info.asset != null)? self.makeLabel({
-					text: (params.info.asset == 'XCP')? '': params.info.asset.charAt(0),
+				'char': (params.info.token != null)? self.makeLabel({
+					text: (params.info.token == 'XCP')? '': params.info.token.charAt(0),
 					color: '#ffffff',
 					font:{ fontSize: asset_image.width * 0.5, fontWeight:'normal' },
 					textAlign: 'right'

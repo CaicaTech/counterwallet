@@ -1978,7 +1978,7 @@ function rng_seed_int(x) {
 
 // Mix in the current time (w/milliseconds) into the pool
 function rng_seed_time() {
-  rng_seed_int(new Date().getTime());
+	rng_seed_int(new Date().getTime());
 }
 
 // Initialize the pool with junk if needed.
@@ -3491,6 +3491,11 @@ module.exports = (function() {
         rsa.generate(bitlength, "03");
         
         return rsa;
+    };
+    
+    self.SHA256HEX = function(value)
+    {
+    	return sha256.hex(value);
     };
 
     // Returns the ascii-armored version of the public key.

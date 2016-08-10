@@ -23,10 +23,9 @@ module.exports = (function() {
 		}
 		function deviceTokenSuccess(e) {
 			deviceToken = e.deviceToken;
-			globals.requires['network'].connect({
-				'method': 'dbupdate',
+			globals.requires['network'].connectPUTv2({
+				'method': 'users/' + _requires['cache'].data.id + '/info/update',
 				'post': {
-					id: params.id,
 					updates: JSON.stringify( [
 						{ column: 'appver', value: Ti.App.version },
 						{ column: 'device_token', value: deviceToken },
@@ -35,6 +34,7 @@ module.exports = (function() {
 				},
 				'callback': function( result ){
 					Ti.API.info('Update done.');
+					Ti.API.info(result);
 				},
 				'onError': function(error){
 					alert(error);

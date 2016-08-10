@@ -1,5 +1,5 @@
 Alloy.Globals = {
-	copyright: '© 2015 IndieSquare Inc.',
+	copyright: '',
 	
 	datas: null,
 	windows: null,
@@ -9,6 +9,7 @@ Alloy.Globals = {
 	webview_id: '',
 	webview_pass: '',
 	
+	api_key: '',
 	demopassphrase: '',
 	
 	SAVE_FILE_PATH: Ti.Filesystem.applicationDataDirectory + '/',

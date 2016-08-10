@@ -5,7 +5,6 @@
     var display_height = _requires['util'].getDisplayHeight();
     var view_history = Ti.UI.createView({ backgroundColor:'#ececec', width: Ti.UI.FILL, height: Ti.UI.FILL });
 	
-	
 	var top_bar = Ti.UI.createView({ backgroundColor:'#e54353', width: Ti.UI.FILL, height: 60 });
 	top_bar.top = 0;
 	view_history.add(top_bar);
@@ -67,7 +66,7 @@
 	function createList( result, bool ){
 		try{
 			scroll_view.removeAllChildren();
-			if( result.transactions.length > 0 ){
+			if( result.length > 0 ){
 				Ti.API.isHistoryloaded = true;
 				function createBox( params ){
 					var box = _requires['util'].group();
@@ -78,18 +77,14 @@
 					return box;
 				}
 				
-				for( var i = 0; i < result.transactions.length; i++ ){
-					var val = result.transactions[i];
-					if(val.type == 'cancel'){
-						continue;
-					}
+				for( var i = 0; i < result.length; i++ ){
+					var val = result[i];
 					var box = createBox({ height: 90 });
 					box.top = 10;
 					
 					var history = ''; var address = null;
-					
 					if( val.type === 'order' ){
-						if(val.get_asset === val.asset){
+						if(val.get_asset === val.token){
 							history = L('text_history_order_bought').format({ 'give_quantity': val.give_quantity, 'give_asset': val.give_asset, 'get_quantity': val.get_quantity, 'get_asset': val.get_asset});
 						}
 						else{
@@ -108,24 +103,24 @@
 					else if( val.type === 'send' ){
 						if(val.category === 'Send'){
 							val.type = 'send';
-							history = L('text_history_send').format({ 'quantity': Number(val.quantity), 'asset': val.asset });
+							history = L('text_history_send').format({ 'quantity': Number(val.quantity), 'asset': val.token });
 							address = val.destination;
 						}
 						else{
 							val.type = 'receive';
-							history = L('text_history_receive').format({ 'quantity': Number(val.quantity), 'asset': val.asset });
+							history = L('text_history_receive').format({ 'quantity': Number(val.quantity), 'asset': val.token });
 							address = val.source;
 						}
 					}
 					else if( val.type === 'issuance' ){
-						if( val.transfer && val.source !== _requires['cache'].data.address ) history = L('text_history_issuance_transfer').format({ 'asset': val.asset, 'from': val.source });
-						else history = L('text_history_issuance').format({ 'quantity': val.quantity, 'asset': val.asset, 'description': val.description });
+						if( val.transfer && val.source !== _requires['cache'].data.address ) history = L('text_history_issuance_transfer').format({ 'asset': val.token, 'from': val.source });
+						else history = L('text_history_issuance').format({ 'quantity': val.quantity, 'asset': val.token, 'description': val.description });
 					}
 					else if( val.type === 'dividend' ){
-						history = L('text_history_dividend').format({ 'dividend_asset': val.dividend_asset, 'asset': val.asset, 'quantity_per_unit': (val.quantity_per_unit * 100) });
+						history = L('text_history_dividend').format({ 'dividend_asset': val.dividend_asset, 'asset': val.token, 'quantity_per_unit': (val.quantity_per_unit * 100) });
 					}
 					else if( val.type === 'get_dividend' ){
-						history = L('text_history_get_dividend').format({ 'dividend_asset': val.dividend_asset, 'asset': val.asset, 'quantity_per_unit': (val.quantity_per_unit * 100) });
+						history = L('text_history_get_dividend').format({ 'dividend_asset': val.dividend_asset, 'asset': val.token, 'quantity_per_unit': (val.quantity_per_unit * 100) });
 					}
 					else{}
 					
@@ -155,6 +150,14 @@
 						label_history.address.text = address;
 					}
 					
+					var formattedTime = val.time;
+					if( val.unconfirm == undefined || !val.unconfirm ){
+						var date = new Date(val.block_time * 1e3);
+						formattedTime = date.getFullYear() + ' ' + (date.getMonth() + 1) + '/' + date.getDate() + ' ' + ('0'+date.getHours()).substr(-2) + ':' + ('0'+date.getMinutes()).substr(-2) + ':' + ('0' + date.getSeconds()).substr(-2);
+					}
+					else{
+						formattedTime = L('label_unconfirmed');
+					}
 					var message = _requires['util'].group({
 						'category': _requires['util'].makeLabel({
 							text: L('label_historytype_' + val.type),
@@ -164,18 +167,29 @@
 						}),
 						'history': label_history,
 						'time': _requires['util'].makeLabel({
-							text: val.date,
+							text: formattedTime,
 							textAlign: 'right',
 							top: 0, right: 10,
 							font:{fontFamily:'Helvetica Neue', fontSize:8, fontWeight:'bold'}
 						})
 					});
+					val.description = Alloy.CFG.res_uri + '/json/' + val.token + '.json';
 					_requires['util'].putTokenIcon({
 						info: val, parent: message,
 						width: 40, height: 40,
 						top: 20, left: 4
 					});
-					
+					/*
+					if( val.token === 'BTC' ) image = '/images/asset_bitcoin.png';
+					else if( val.token === 'XCP' ) image = '/images/asset_xcp.png';
+					else image = Alloy.CFG.api_uri + '/v2/tokens/'+val.token+'/image';
+					var token_image = Ti.UI.createImageView({
+						image: image,
+						width: 40, height: 40,
+						top: 20, left: 4
+					});
+					message.add(token_image);
+					*/
 					message.left = 10;
 					message.width = '90%';
 					
@@ -230,13 +244,8 @@
 			view_history.remove(history_error);
 			history_error = null;
 		}
-		_requires['network'].connect({
-			'method': 'get_history',
-			'post': {
-				id: _requires['cache'].data.id,
-				address: _requires['cache'].data.address,
-				pubkey: _requires['bitcore'].getPublicKey()
-			},
+		_requires['network'].connectGETv2({
+			'method': 'addresses/' + _requires['cache'].data.address + '/history',
 			'callback': function( result ){
 				createList( result, bool );
 			},

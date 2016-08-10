@@ -32,4 +32,3 @@ var UintArray = function(arg1) {
 Uint8Array  = UintArray;
 //global.Uint32Array = UintArray;
 Uint32Array = UintArray;
-

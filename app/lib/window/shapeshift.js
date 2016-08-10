@@ -37,10 +37,10 @@ exports.run = function(params) {
 		function getBalances(){
 			for( var i = 0; i < globals.balances.length; i++ ){
 				var val = globals.balances[i];
-				if(val["asset"] === 'BTC'){
+				if(val['token'] === 'BTC'){
 					 btc_balance = val["balance"];
 				}
-				else if (val["asset"] === 'XCP'){
+				else if (val['token'] === 'XCP'){
 					 xcp_balance = val["balance"];
 				}
 			}
@@ -628,10 +628,10 @@ exports.run = function(params) {
 		
 		confirm_button.addEventListener('touchstart', function(){
 			var loading = _requires['util'].showLoading(main_view, { width: Ti.UI.FILL, height: Ti.UI.FILL });
-			_requires['network'].connect({
+			_requires['network'].connectPOSTv2({
 				'method': 'shapeshift',
 				'post': {
-					'id': _requires['cache'].data.id,
+					'source': _requires['cache'].data.address,
 					'buy_token': buy_token,
 					'buy_amount': buy_token_amount
 				},
@@ -640,12 +640,11 @@ exports.run = function(params) {
 					_requires['network'].connectGETv2({
   						'method': 'fees/recommended',
    						'callback': function(result2){
-   							_requires['network'].connect({
-								'method': 'create_send',
+   							_requires['network'].connectPOSTv2({
+								'method': 'transactions/send',
 								'post': {
-									id: _requires['cache'].data.id,
-									address: _requires['cache'].data.address,
-									asset: sell_token,
+									source: _requires['cache'].data.address,
+									token: sell_token,
 									destination: deposit_address,
 									quantity: result.depositAmount,
 									fee_per_kb:result2[_requires['cache'].data.current_fee],
@@ -653,14 +652,14 @@ exports.run = function(params) {
 								'callback': function( result3 ){
 									loading.removeSelf();
 									if(buy_token === 'XCP'){
-										var feeInBTC = (result3.fee / 100000000).toFixed(8);
+										var feeInBTC = (result3.fee / 100000000).toFixed2(8);
 									}
-									else{
-										var feeInBTC = ((result3.fee / 100000000) + 0.0000543).toFixed(8);
+									else {
+										var feeInBTC = ((result3.fee / 100000000) + 0.0000543).toFixed2(8);
 									}
 									var feeInCurrency = globals.requires['tiker'].to('BTC', feeInBTC, globals.requires['cache'].data.currncy);
 									var dialog = _requires['util'].createDialog({
-										message: L('text_sendconfirmation_shape_shift').format( { 'amount': result.depositAmount, 'token':sell_token, 'amount2':result.withdrawalAmount, 'token2':buy_token })+'\n\n'+L('label_fee') + ' ' + feeInBTC + 'BTC (' + feeInCurrency + ')',
+										message: L('text_sendconfirmation_shape_shift').format( { 'amount': result.depositAmount, 'token':sell_token, 'amount2':result.withdrawalAmount, 'token2':buy_token })+'\n\n'+L('label_fee') + ' ' + feeInBTC + 'BTC (' + feeInCurrency + ')' + '\n' + globals.fee_text[_requires['cache'].data.current_fee],
 										buttonNames: [L('shape_shift_accept'), L('label_cancel'), L('shape_shift_view_terms')]
 									});
 									dialog.addEventListener('click', function(e){
@@ -677,11 +676,12 @@ exports.run = function(params) {
 												_requires['auth'].check({ title: L('text_confirmsend'), callback: function(e){
 													if( e.success ){
 														loading = _requires['util'].showLoading(main_view, { width: Ti.UI.FILL, height: Ti.UI.FILL });
-														_requires['bitcore'].sign(result3.unsigned_hex, {
+														_requires['bitcore'].sign(result3.unsigned_tx, {
 															'address': _requires['cache'].data.address,
+															'destination': deposit_address,
 															'callback': function(signed_tx){
-																_requires['network'].connect({
-																	'method': 'sendrawtransaction',
+																_requires['network'].connectPOSTv2({
+																	'method': 'transactions/broadcast',
 																	'post': {
 																		tx: signed_tx
 																	},

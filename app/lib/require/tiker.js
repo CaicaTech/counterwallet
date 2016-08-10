@@ -3,9 +3,8 @@ module.exports = (function() {
 	token_fiat_values = [];
 	self.getTiker = function( params ){
 		var _requires = globals.requires;
-		_requires['network'].connect({
-			'method': 'get_ticker',
-			'post': {},
+		_requires['network'].connectGETv2({
+			'method': 'market/ticker',
 			'callback': function( result ){
 				globals.tiker = result;
 				if( params && params.callback ) params.callback(result);

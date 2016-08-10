@@ -39,7 +39,6 @@ exports.run = function() {
 	globals.main_window = theWindow;
 		
 	_requires['bitcore'].init(_requires['cache'].data.passphrase);
-		
 		var defaultAddress = globals.requires['bitcore'].createHDAddress(0);
 		if( Ti.App.Properties.getString("current_address") != null){
 			_requires['cache'].data.address = Ti.App.Properties.getString("current_address");
@@ -50,8 +49,8 @@ exports.run = function() {
 				width : Ti.UI.FILL,
 				height : Ti.UI.FILL
 			});
-			_requires['network'].connectGET({
-				'method' : 'users/' + _requires['cache'].data.id + '/tags',
+			_requires['network'].connectGETv2({
+				'method' : 'users/' + _requires['cache'].data.id + '/addresses',
 				'callback' : function(results) {
 					if (results != null) walletsArray = results;
 	
@@ -232,7 +231,7 @@ exports.run = function() {
 									height : Ti.UI.FILL
 								});
 	
-								_requires['network'].connectPUT({
+								_requires['network'].connectPUTv2({
 									'method' : 'tags/'+ valObject.id,
 									'post' : {
 										user_id : _requires['cache'].data.id,
@@ -291,49 +290,47 @@ exports.run = function() {
 					});
 					dialog.addEventListener('click', function(e) {
 						if (e.index != e.source.cancel) {
-								var loading = _requires['util'].showLoading(theWindow, {
-									width : Ti.UI.FILL,
-									height : Ti.UI.FILL
-								});
-	
-								_requires['network'].connectDELETE({
-									'method' : 'tags/'+ valObject.id,
-									'post' : {},
-									'callback' : function(result) {
-										_requires['network'].connectPOST({
-											'method' : 'edit_preferences',
-											'post' : {
-												id : _requires['cache'].data.id,
-												num_addresses_used : walletsArray.length - 1
-											},
-											'callback' : function() {
-												if(valObject.address === wallet_address.text){
-													walletButton.wallet_button.text = getTagForAddress(defaultAdd);
-													home_title_center.text = getTagForAddress(defaultAdd);
-													Ti.App.Properties.setString("current_address", defaultAdd);
-													wallet_address.text = defaultAdd;
-													globals.loadBalance(true);
-													setImageQR();
-												}
-												getWallets(false);
-											},
-											'onError' : function(error) {
-												// Failed or Cancel
-												globals.requires['bitcore'].changeHD(num_hd_address - 1);
-											},
-											'always' : function() {
-												if( loading != null ) loading.removeSelf();
+							var loading = _requires['util'].showLoading(theWindow, {
+								width : Ti.UI.FILL,
+								height : Ti.UI.FILL
+							});
+
+							_requires['network'].connectDELETEv2({
+								'method' : 'tags/'+ valObject.id,
+								'post' : {},
+								'callback' : function(result) {
+									_requires['network'].connectPUTv2({
+										'method' : 'users/' + _requires['cache'].data.id + '/preference/update',
+										'post' : {
+											num_addresses_used : walletsArray.length - 1
+										},
+										'callback' : function() {
+											if(valObject.address === wallet_address.text){
+												walletButton.wallet_button.text = getTagForAddress(defaultAdd);
+												home_title_center.text = getTagForAddress(defaultAdd);
+												Ti.App.Properties.setString("current_address", defaultAdd);
+												wallet_address.text = defaultAdd;
+												globals.loadBalance(true);
+												setImageQR();
 											}
-										});
-									},
-									'onError' : function(error) {
-										// Failed or Cancel
-										Ti.API.log('error remove' + error);
-									},
-									'always' : function() {
-										if( loading != null ) loading.removeSelf();
-									}
-								});
+											getWallets(false);
+										},
+										'onError' : function(error) {
+											// Failed or Cancel
+											//globals.requires['bitcore'].changeHD(num_hd_address - 1);
+										},
+										'always' : function() {
+											if( loading != null ) loading.removeSelf();
+										}
+									});
+								},
+								'onError' : function(error) {
+									Ti.API.log('error remove' + error);
+								},
+								'always' : function() {
+									if( loading != null ) loading.removeSelf();
+								}
+							});
 						}
 					});
 					dialog.show();
@@ -551,16 +548,19 @@ exports.run = function() {
 	lowBox.left = 5;
 	highBox.addEventListener('click', function(){
 		_requires['cache'].data.current_fee = "fastestFee";
+		_requires['cache'].save();
 		feeButton.fee_button.title = L('title_settings_high_fee');
 		picker_fee.animate(slide_out);
 	});
 	medBox.addEventListener('click', function(){
 		_requires['cache'].data.current_fee = "halfHourFee";
+		_requires['cache'].save();
 		feeButton.fee_button.title = L('title_settings_med_fee');
 		picker_fee.animate(slide_out);
 	});
 	lowBox.addEventListener('click', function(){
-		_requires['cache'].data.current_fee = "hourFee";
+		_requires['cache'].data.current_fee = "lowFee";
+		_requires['cache'].save();
 		feeButton.fee_button.title = L('title_settings_low_fee');
 		picker_fee.animate(slide_out);
 	});
@@ -585,21 +585,15 @@ exports.run = function() {
 			password : _requires['cache'].data.password
 		});
 	
-		_requires['network'].connect({
-			'method' : 'dbget',
-			'post' : {
-				id : _requires['cache'].data.id,
-				column : 'username'
-			},
+		_requires['network'].connectGETv2({
+			'method' : 'users/' + _requires['cache'].data.id + '/username',
 			'callback' : function(result) {
-				globals.user_name = result.value;
+				globals.user_name = result.username;
 			},
 			'onError' : function(error) {
 				globals.user_name = '';
 			}
 		});
-	
-	
 		
 		var home_title_center = _requires['util'].makeLabel({
 			text : L('label_tab_home'),
@@ -732,10 +726,9 @@ exports.run = function() {
 										width : Ti.UI.FILL,
 										height : Ti.UI.FILL
 									});
-									_requires['network'].connect({
-										'method' : 'dbupdate',
+									_requires['network'].connectPUTv2({
+										'method' : 'users/' + _requires['cache'].data.id + '/info/update',
 										'post' : {
-											id : _requires['cache'].data.id,
 											updates : JSON.stringify([{
 												column : 'username',
 												value : inputText
@@ -857,19 +850,15 @@ exports.run = function() {
 								height : Ti.UI.FILL
 							});
 		
-							_requires['network'].connect({
-								'method' : 'get_preferences',
-								'post' : {
-									id : _requires['cache'].data.id
-								},
+							_requires['network'].connectGETv2({
+								'method' : 'users/' + _requires['cache'].data.id + '/preference',
 								'callback' : function(result) {
 									// Get a new address
-									
 									var num_hd_address =  Number(result.num_addresses_used);
 									var new_address = globals.requires['bitcore'].createHDAddress(num_hd_address);
+									
 									// Setting address label and send to the server or cancel.
-		
-									_requires['network'].connectPOST({
+									_requires['network'].connectPOSTv2({
 										'method' : 'tags',
 										'post' : {
 											user_id : _requires['cache'].data.id,
@@ -877,13 +866,11 @@ exports.run = function() {
 											tag : inputText
 										},
 										'callback' : function(result) {
-		
 											// Success
 											// invoke edit_preference to edit a current address number.
-											_requires['network'].connectPOST({
-												'method' : 'edit_preferences',
+											_requires['network'].connectPUTv2({
+												'method' : 'users/' + _requires['cache'].data.id + '/preference/update',
 												'post' : {
-													id : _requires['cache'].data.id,
 													num_addresses_used : num_hd_address + 1
 												},
 												'callback' : function() {
@@ -953,18 +940,13 @@ exports.run = function() {
 		}
 		
 	var current_fee = _requires['cache'].data.current_fee;
+	globals.fee_text = {
+		'fastestFee': L('title_settings_high_fee'),
+		'halfHourFee': L('title_settings_med_fee'),
+		'lowFee': L('title_settings_low_fee'),
+	};
+	current_fee = globals.fee_text[current_fee];
 	
-	if(current_fee == "fastestFee"){
-		current_fee = L('title_settings_high_fee');
-	}
-	else if(current_fee == "halfHourFee"){
-		current_fee = L('title_settings_med_fee');
-	}
-	else if(current_fee == "hourFee"){
-		current_fee = L('title_settings_low_fee');
-	}
-
-
 	var feeButton = _requires['util'].group({
 	
 			'fee_icon' : _requires['util'].makeImage({
@@ -1089,8 +1071,6 @@ exports.run = function() {
 		});
 		menu_view.add(supportButton);
 		
-		
-		
 		var indieBoardButton = _requires['util'].group({
 	
 			'ib_icon' : _requires['util'].makeImage({
@@ -1156,13 +1136,10 @@ exports.run = function() {
 	
 		menu_view.add(linkageButton);
 		home_view.add(shadow);
-		//middle_view.add(shadow);
-		//middle_view.add(balance_view);
 		home_view.add(balance_view);
 		
 		home_view.add(top_bar);
 		
-		//middle_view.add(top_bar);
 		var middle_view_scroll = Ti.UI.createScrollableView({
 			views:[home_view,view_receive,view_dex,view_history],
 	  		showPagingControl:false
@@ -1283,13 +1260,8 @@ exports.run = function() {
 					message : L('label_load_tokens')
 				});
 				
-			_requires['network'].connect({
-				'method' : 'get_balances',
-				'post' : {
-					id : _requires['cache'].data.id,
-				    address: _requires['cache'].data.address,
-				    pubkey: _requires['bitcore'].getPublicKey()
-				},
+			_requires['network'].connectGETv2({
+				'method' : 'addresses/' + _requires['cache'].data.address + '/balances',
 				'callback' : function(result) {
 					if (balance_error != null) {
 						middle_view.remove(balance_error);
@@ -1309,20 +1281,15 @@ exports.run = function() {
 										asset_object.fiat_balance.text = _requires['tiker'].to(key, asset_object.balance, _requires['cache'].data.currncy);
 									} else {
 										(function(key) {
-											_requires['network'].connect({
-												'method' : 'get_marketprice',
-												'post' : {
-													token : key
-												},
+											_requires['network'].connectGETv2({
+												'method' : 'market/' + key + '/price',
 												'callback' : function(result) {
-													if (result != null) {
-														var the_asset_object = assets_info[key];
-														if (result.price > 0) {
-															var xcpval = result.price * the_asset_object.balance;
-															the_asset_object.fiat_balance.text = _requires['tiker'].to('XCP', xcpval, _requires['cache'].data.currncy, 4);
-														} else {
-															the_asset_object.fiat_balance.text = '-';
-														}
+													var the_asset_object = assets_info[key];
+													if (result.BTC.price > 0) {
+														var xcpval = result.BTC.price * the_asset_object.balance;
+														the_asset_object.fiat_balance.text = _requires['tiker'].to('XCP', xcpval, _requires['cache'].data.currncy, 4);
+													} else {
+														the_asset_object.fiat_balance.text = '-';
 													}
 												}
 											});
@@ -1346,9 +1313,9 @@ exports.run = function() {
 						if (i == 0)
 							box.top = 20;
 						
-						var display_asset = val.asset;
-						if( val.asset.length >= 13 ){
-							display_asset = val.asset.substr(0, 13) + '...';
+						var display_asset = val.token;
+						if( val.token.length >= 13 ){
+							display_asset = val.token.substr(0, 13) + '...';
 						}
 						var asset_name = _requires['util'].makeLabel({
 							text : display_asset,
@@ -1362,9 +1329,10 @@ exports.run = function() {
 							left : 65,
 							width : 150,
 						});
-						asset_name.asset = val.asset;
+						asset_name.asset = val.token;
 						box.add(asset_name);
-	
+						
+						val.description = Alloy.CFG.res_uri + 'json/' + val.token + '.json';
 						_requires['util'].putTokenIcon({
 							info : val,
 							parent : box,
@@ -1373,7 +1341,19 @@ exports.run = function() {
 							top : 7,
 							left : 7
 						});
-	
+						
+						/*
+						if( val.token === 'BTC' ) image = '/images/asset_bitcoin.png';
+						else if( val.token === 'XCP' ) image = '/images/asset_xcp.png';
+						else image = Alloy.CFG.api_uri + '/v2/tokens/'+val.token+'/image';
+						var token_image = Ti.UI.createImageView({
+							image: image,
+							width: 48, height: 48,
+							top: 7, left: 7
+						});
+						box.add(token_image);
+						*/
+						
 						var item_name = asset_name.text;
 						var balanceString = val.balance.toString();
 						
@@ -1387,7 +1367,8 @@ exports.run = function() {
 							
 							balanceString = comps[0] + '.' + afterDecimal;
 						}
-						var unconf = ((val.unconfirmed != 0) ? val.unconfirmed : '');
+						var unconf = ((val.unconfirmed_balance != 0) ? val.unconfirmed_balance : '');
+						if( unconf > 0 ) unconf = '+' + unconf;
 						unconf = unconf.toString();
 						
 						var comps2 = unconf.split('.');
@@ -1494,8 +1475,8 @@ exports.run = function() {
 							top : 36,
 							right : 10
 						});
-						box.add(asset_array.fiat_balance);
-						assets_info[val.asset] = asset_array;
+						if( val.token === 'BTC' ) box.add(asset_array.fiat_balance);
+						assets_info[val.token] = asset_array;
 	
 						info_button.is = true;
 						(function(info_button) {
@@ -1525,7 +1506,7 @@ exports.run = function() {
 							send_button.addEventListener('touchend', function(e) {
 								if (send_button.is) {
 									send_button.is = false;
-									var asset = val.asset;
+									var asset = val.token;
 									var balance = val.balance;
 									var fiat = fiat_balance.text;
 	
@@ -1546,10 +1527,10 @@ exports.run = function() {
 							});
 						})(send_button, val, asset_array.fiat_balance);
 	
-						if (val.asset !== 'BTC' && val.asset !== 'XCP')
+						if (val.token !== 'BTC' && val.token !== 'XCP')
 							box.add(info_button);
 							
-						box.add(buyXCP_button);
+						if (val.token == 'XCP' ) box.add(buyXCP_button);
 						box.add(send_button, val.balance);
 	
 						balance_view.add(box);

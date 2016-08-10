@@ -2,12 +2,12 @@ module.exports = (function() {
 	var self = {};
 	var crypt = require('crypt/api');
 	
-	function getPath(){
+	function getPath(isMakeFile){
 		if( OS_ANDROID ){
 			var newDir = Ti.Filesystem.getFile(Ti.Filesystem.applicationDataDirectory, 'save');
 			if( !newDir.exists() ) newDir.createDirectory();
-			var file = Ti.Filesystem.getFile(newDir.nativePath, 'save_file.json');
-			if( !file.exists() ) file.write('');
+			var file = Ti.Filesystem.getFile(newDir.nativePath, 'file.json');
+			if( isMakeFile && !file.exists() ) file.write('');
 			
 			return file.nativePath;
 		}
@@ -15,13 +15,13 @@ module.exports = (function() {
 	}
 	self.getPath = getPath;
 	
-	function getRSAPath(){
+	function getRSAPath(isMakeFile){
 		if( OS_ANDROID ){
-			var newDir = Ti.Filesystem.getFile(Ti.Filesystem.applicationDataDirectory, 'jithd');
+			var newDir = Ti.Filesystem.getFile(Ti.Filesystem.applicationDataDirectory, 'file');
 			if( !newDir.exists() ) newDir.createDirectory();
 			
-			var file = Ti.Filesystem.getFile(newDir.nativePath, 'jithd.json');
-			if( !file.exists() ) file.write('');
+			var file = Ti.Filesystem.getFile(newDir.nativePath, 'file.json');
+			if( isMakeFile && !file.exists() ) file.write('');
 			
 			return file.nativePath;
 		}
@@ -30,7 +30,7 @@ module.exports = (function() {
 	self.getRSAPath = getRSAPath;
 	
 	function getData(){
-		var f = Ti.Filesystem.getFile( getPath() );
+		var f = Ti.Filesystem.getFile( getPath(false) );
 		var data = f.read();
 		
 		if ( !data || data.length <= 0 ) data = '{}';
@@ -53,10 +53,12 @@ module.exports = (function() {
 	self.data = null;
 	
 	self.init = function(){
-		var f = Ti.Filesystem.getFile( getPath() );
-	    if( f.exists() ) f.deleteFile();
+		var f = Ti.Filesystem.getFile( getPath(false) );
+	    if( f.exists() ){
+	    	f.deleteFile();
+	    }
 	    
-	    var f2 = Ti.Filesystem.getFile( getRSAPath() );
+	    var f2 = Ti.Filesystem.getFile( getRSAPath(false) );
 	    if( f2.exists() ) f2.deleteFile();
 	    
 	    var f3 = Ti.Filesystem.getFile(Ti.Filesystem.applicationDataDirectory, 'qr_address.png');
@@ -68,7 +70,7 @@ module.exports = (function() {
 	};
 	
 	self.load_rsa = function(){
-		var f = Ti.Filesystem.getFile( getRSAPath() );
+		var f = Ti.Filesystem.getFile( getRSAPath(false) );
 		
 		var json = f.read();
 		if ( !json || json.length <= 0 ) json = '{}';
@@ -79,23 +81,23 @@ module.exports = (function() {
 	self.checkExists = function(){
 		var exists = false;
 		if( OS_ANDROID ){
-			var f = false;
 			var newDir = Ti.Filesystem.getFile(Ti.Filesystem.applicationDataDirectory, 'save');
+			var f = null;
+			var f2 = null;
 			if( newDir.exists() ){
-				var file = Ti.Filesystem.getFile(newDir.nativePath, 'save_file.json');
-				if( file.exists() ) f = true;
+				f = Ti.Filesystem.getFile(newDir.nativePath, 'file.json');
 			}
-			var f2 = false;
-			var newDir = Ti.Filesystem.getFile(Ti.Filesystem.applicationDataDirectory, 'jithd');
+			var newDir = Ti.Filesystem.getFile(Ti.Filesystem.applicationDataDirectory, 'file');
 			if( newDir.exists() ){
-				var file = Ti.Filesystem.getFile(newDir.nativePath, 'jithd.json');
-				if( !file.exists() ) f2 = true;
+				f2 = Ti.Filesystem.getFile(newDir.nativePath, 'file.json');
 			}
-			return f && f2;
+			var a = (f == null)? false: f.exists();
+			var b = (f2 == null)? false: f2.exists();
+			exists = a && b;
 		}
 		else{
-			var f = Ti.Filesystem.getFile( getPath() );
-			var f2  = Ti.Filesystem.getFile( getRSAPath() );
+			var f = Ti.Filesystem.getFile( getPath(false) );
+			var f2  = Ti.Filesystem.getFile( getRSAPath(false) );
 			exists = f.exists() && f2.exists();
 		}
 		
@@ -103,7 +105,7 @@ module.exports = (function() {
 	};
 	
 	self.save_rsa = function( data ){
-		var f  = Ti.Filesystem.getFile( getRSAPath() );
+		var f  = Ti.Filesystem.getFile( getRSAPath(true) );
 		f.write(JSON.stringify( data ));
 	};
 	
@@ -119,7 +121,7 @@ module.exports = (function() {
 	};
 	
 	self.save = function(){
-		var f = Ti.Filesystem.getFile( getPath() );
+		var f = Ti.Filesystem.getFile( getPath(true) );
 	    
 	    var str_data = JSON.stringify(self.data);
 	    var rsa_info = self.load_rsa();

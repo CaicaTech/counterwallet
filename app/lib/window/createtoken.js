@@ -238,147 +238,109 @@ exports.run = function( params ){
 			var token = box_token.field.value.toUpperCase();
 		
 			var loading = _requires['util'].showLoading(win.origin, { width: Ti.UI.FILL, height: Ti.UI.FILL, message: L('loading_issue')});
-							
-								
-								_requires['network'].connectGETv2({
-					  					'method': 'fees/recommended',
-					   					 'callback': function(result){
-								
-								
-								_requires['network'].connect({
-									'method': 'make_enhancedassetinfo',
-									'post': {
-										asset: token,
-										media: blobImage,
-										description: box_description.field.value,
-										website: box_website.field.value
-									},
-									'callback': function( url ){
-										_requires['network'].connect({
-											'method': 'create_issuance',
-											'post': {
-												id: _requires['cache'].data.id,
-												address: _requires['cache'].data.address,
-												token: token,
-												description: url.uri,
-												quantity: box_quantity.field.value,
-												divisible: sl_divisible.is,
-												fee_per_kb:result[_requires['cache'].data.current_fee],
-											},
-											'callback': function( result ){
-												
-												
-												loading.removeSelf();
-												
-												var feeInBTC = (result.fee / 100000000).toFixed(8);
+			_requires['network'].connectGETv2({
+  				'method': 'fees/recommended',
+   				'callback': function( fee_array ){
+   					_requires['network'].connectPOSTv2({
+						'method': 'files/enhancedtokeninfo/' + token,
+						'post': {
+							image: blobImage,
+							description: box_description.field.value,
+							website: box_website.field.value
+						},
+						'callback': function( result ){
+							_requires['network'].connectPOSTv2({
+								'method': 'transactions/issuance',
+								'post': {
+									source: _requires['cache'].data.address,
+									token: token,
+									description: result.uri,
+									quantity: box_quantity.field.value,
+									divisible: sl_divisible.is,
+									fee_per_kb: fee_array[_requires['cache'].data.current_fee],
+								},
+								'callback': function( result ){
+									var fee_XCP = '';
+									if( token.charAt(0) !== 'A' ) fee_XCP = '0.5XCP';
 									
+									loading.removeSelf();
+									var feeInBTC = (result.fee / 100000000).toFixed(8);
 									var feeInCurrency = globals.requires['tiker'].to('BTC', feeInBTC, globals.requires['cache'].data.currncy);
-												
-												
-													var dialog = _requires['util'].createDialog({
-				title: L('label_confirm'),
-				message: L('text_confirmIssuance').format( {'token': token, 'quantity': box_quantity.field.value} )+'\n\n'+L('label_fee') + ' ' + feeInBTC + 'BTC (' + feeInCurrency + ')',
-				buttonNames: [L('label_cancel'), L('label_ok')]
-			});
-			dialog.addEventListener('click', function(e){
-				if( e.index != e.source.cancel ){
-					if( token.charAt(0) != 'A' && xcp_balance < 0.5 ){
-						var dialog = _requires['util'].createDialog({
-							message: L('label_get_xcp'),
-							buttonNames: [L('label_close'),L('label_buy_xcp')]
-						});
-						dialog.addEventListener('click', function(e){
-							if( e.index != e.source.cancel ){
-								globals.tabGroup.setActiveTab(globals.tabGroup.tabs[1]);
-								win.close();
-							}
-						});
-						dialog.show();
-					}
-					else{
-						_requires['auth'].check({ title: L('text_createToken'), callback: function(e){
-							if( e.success ){
-							 loading = _requires['util'].showLoading(win.origin, { width: Ti.UI.FILL, height: Ti.UI.FILL, message: L('loading_issue')});
-								
-												
-												
-												
-												
-												
-												
-												_requires['bitcore'].sign(result.unsigned_hex, {
-													'address': _requires['cache'].data.address,
-													'callback': function(signed_tx){
-														_requires['network'].connect({
-															'method': 'sendrawtransaction',
-															'post': {
-																tx: signed_tx
-															},
-															'callback': function( r ){
-																_requires['util'].createDialog({
-																	message: L('text_issuance_done').format({'asset': token}),
-																	buttonNames: [L('label_close')]
-																}).show();
-															},
-															'onError': function(error){
-																alert(error);
-															},
-															'always': function(){
-																loading.removeSelf();
-															}
-														});
-													},
-													'fail': function(){
-														alert(L('text_error_serierize'));
-														loading.removeSelf();
+									var dialog = _requires['util'].createDialog({
+										title: L('label_confirm'),
+										message: L('text_confirmIssuance').format( {'token': token, 'quantity': box_quantity.field.value} )+'\n\n'+L('label_fee') + ' ' + fee_XCP + ' + ' + feeInBTC + 'BTC (' + feeInCurrency + ')' + '\n' + globals.fee_text[_requires['cache'].data.current_fee],
+										buttonNames: [L('label_cancel'), L('label_ok')]
+									});
+									dialog.addEventListener('click', function(e){
+										if( e.index != e.source.cancel ){
+											if( token.charAt(0) != 'A' && xcp_balance < 0.5 ){
+												var dialog = _requires['util'].createDialog({
+													message: L('label_get_xcp'),
+													buttonNames: [L('label_close'),L('label_buy_xcp')]
+												});
+												dialog.addEventListener('click', function(e){
+													if( e.index != e.source.cancel ){
+														globals.tabGroup.setActiveTab(globals.tabGroup.tabs[1]);
+														win.close();
 													}
 												});
-												
-												
-												
-																
-							}
-						}});
-					}
+												dialog.show();
+											}
+											else{
+												_requires['auth'].check({ title: L('text_createToken'), callback: function(e){
+													if( e.success ){
+														loading = _requires['util'].showLoading(win.origin, { width: Ti.UI.FILL, height: Ti.UI.FILL, message: L('loading_issue')});
+														_requires['bitcore'].sign(result.unsigned_tx, {
+															'address': _requires['cache'].data.address,
+															'callback': function(signed_tx){
+																_requires['network'].connectPOSTv2({
+																	'method' : 'transactions/broadcast',
+																	'post': {
+																		tx: signed_tx
+																	},
+																	'callback': function( r ){
+																		_requires['util'].createDialog({
+																			message: L('text_issuance_done').format({'asset': token}),
+																			buttonNames: [L('label_close')]
+																		}).show();
+																	},
+																	'onError': function(error){
+																		alert(error);
+																	},
+																	'always': function(){
+																		loading.removeSelf();
+																	}
+																});
+															},
+															'fail': function(){
+																alert(L('text_error_serierize'));
+																loading.removeSelf();
+															}
+														});									
+													}
+												}});
+											}
+										}
+									});
+									dialog.show();
+								},
+								'onError': function(error){
+									alert(error);
+									if( loading != null ) loading.removeSelf();
+								}
+							});
+						},
+						'onError': function(error){
+							alert(error);
+							if( loading != null ) loading.removeSelf();
+						}
+					});
+				},
+				'onError' : function(error) {
+					alert(error);
+					loading.removeSelf();
 				}
 			});
-			dialog.show();
-			
-			
-												
-												
-												
-												
-											},
-											'onError': function(error){
-												alert(error);
-												if( loading != null ) loading.removeSelf();
-											}
-										});
-									},
-									'onError': function(error){
-										alert(error);
-										if( loading != null ) loading.removeSelf();
-									}
-								});
-								
-								
-								
-								
-										},
-			'onError' : function(error) {
-				alert(error);
-				loading.removeSelf();
-			}
-		});
-				
-								
-								
-								
-				
-			
-			
-			
 		}
 		else{
 			var dialog = _requires['util'].createDialog({

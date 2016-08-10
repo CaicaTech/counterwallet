@@ -60,7 +60,7 @@
 	
 	<string name="subtitle_settings_high_fee">平均承認時間 10分</string>
 	<string name="subtitle_settings_med_fee">平均承認時間 30分</string>
-	<string name="subtitle_settings_low_fee">平均承認時間 60分</string>
+	<string name="subtitle_settings_low_fee">平均承認時間 60分以上</string>
 	
 	
 	<string name="label_confirmorder">注文の確認</string>
@@ -95,7 +95,7 @@
 	
 	<string name="label_newwallet">新しくウォレットを作る</string>
 	<string name="label_signin">サインインする</string>
-	<string name="text_loginasuser">パスフレーズを持っている</string>
+	<string name="text_loginasuser">復元パスフレーズを持っている</string>
 	
 	<string name="text_copied">コピーしました</string>
 	<string name="text_copied_message">アドレスをクリップボードにコピーしました</string>
@@ -277,8 +277,7 @@
 	<string name="label_reload">再読み込み</string>
 	
 	<string name="label_passphrase">復元パスフレーズ</string>
-	<string name="label_passphrase_title">復元パスフレーズ</string>
-	<string name="text_passphrase">下記を大切に保管して下さい\n\n"{passphrase}"\n\n パスフレーズを紛失すると、ビットコインやトークンを失います。確実に紙などに記録して下さい。</string>
+	<string name="text_passphrase">下記の12個の英単語を\n大切に保管して下さい\n\n"{passphrase}"\n\n 復元パスフレーズを紛失すると、ビットコインやトークンを失います。確実に紙などに記録して下さい。</string>
 	
 	<string name="label_passphrase_ok">記録しました</string>
 	<string name="text_passphrase_re">復元パスフレーズは、設定からも見ることが出来ます。</string>
@@ -360,8 +359,8 @@
 	<string name="text_readerror">正常にデータを取得できませんでした...</string>
 	<string name="text_authentication">認証してください</string>
 	
-	<string name="draw_title">自分だけの安全なパスフレーズを生成する必要があります。パスフレーズはトークンやビットコインを復元する時に必要で、非常に重要なものです</string>
-	<string name="draw_explain">安全なパスフレーズを生成するために、ランダム性を利用します。\n指でスクリーンをランダムにこすってみてください</string>
+	<string name="draw_title">自分だけの安全な復元パスフレーズを生成する必要があります。復元パスフレーズはトークンやビットコインを復元する時に必要で、非常に重要なものです</string>
+	<string name="draw_explain">安全な復元パスフレーズを生成するために、ランダム性を利用します。\n指でスクリーンをランダムにこすってみてください</string>
 	<string name="text_inputbyeach">単語毎に入力する</string>
 	<string name="text_word_num">{num} 語目</string>
 	<string name="text_inputbyeach_next">次へ</string>
@@ -422,7 +421,7 @@
 	<string name="label_create_token_desc">[必須]トークンの名前です。無料トークンをオンにすると、Aから始まるランダム数字のトークンを無料で生成できます。</string>
 	<string name="label_create_quantity_desc">[必須]トークンの発行量です。後から追加で発行することも可能です。</string>
 	<string name="label_create_description_desc">[任意]トークンについての説明です。後から変更も可能です。</string>
-	<string name="label_create_website_desc">[任意]ウェブサイトのURLを入力できます。</string>
+	<string name="label_create_website_desc">[任意]ウェブサイトのURLを入力できます。後から変更も可能です。</string>
 	<string name="label_create_image_desc">[任意]トークンの画像を設定することができます。後から変更も可能です。</string>
 	<string name="label_create_divisible_desc">[必須]0.1, 0.05といった小数の単位で送受信可能になります。整数のみにする場合はOFFにして下さい。(後から変更出来ません!)</string>
 
@@ -449,9 +448,9 @@
 	<string name="text_success_intro_button">次へ</string>
 	
 	<string name="label_pass_intro_1">以下の復元パスフレーズを記録してください！</string>
-	<string name="label_pass_intro_3">スマホを紛失した時などに、このパスフレーズを使ってコインの復元が出来ます。（パスフレーズは後で設定からも確認できます。）</string>
+	<string name="label_pass_intro_3">スマホを紛失した時などに、この復元パスフレーズを使ってコインの復元が出来ます。（復元パスフレーズは後で設定からも確認できます。）</string>
 	<string name="label_pass_intro_4">安全に保管し、\n誰にも見せないでください！</string>
-	<string name="label_pass_intro_5">\nもし誰かにこのパスフレーズが漏れると、ウォレット内のコインを盗まれる可能性があります</string>
+	<string name="label_pass_intro_5">\nもし誰かにこの復元パスフレーズが漏れると、ウォレット内のコインを盗まれる可能性があります</string>
 	<string name="text_pass_intro_button">記録完了</string>
 	
 	<string name="label_passcode_intro_1">4桁のパスコードを設定する</string>
@@ -460,7 +459,7 @@
 	
 	<string name="label_touchid_intro_1">touch IDを設定しますか？</string>
 	<string name="text_touchid_intro_button">touch IDを設定</string>
-	<string name="text_touchid_intro_button_skip">とばす</string>
+	<string name="text_touchid_intro_button_skip">あとで</string>
 	
 	<string name="label_complete_intro_1">IndieSquare Walletはビットコイン2.0ウォレットで、ビットコインの送受信だけでなく以下のような機能が使えます</string>
 	<string name="label_complete_intro_2">トークンの送受信</string>
@@ -475,4 +474,6 @@
 	<string name="label_box_3">ビットコインやトークンの受取りは\nこちらのページから可能です</string>
 	
 	<string name="text_error_order">注文に失敗しました。少し後で再度試してください。</string>
+	<string name="text_error_notsecure">セキュリティに必要なデータを取得出来ませんでした。再起動して下さい。</string>
+	<string name="label_unconfirmed">承認中です</string>
 </resources>

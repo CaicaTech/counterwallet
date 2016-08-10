@@ -544,143 +544,112 @@ exports.run = function( params ){
 			{ name: L('label_destination'), type: 'address', target: recipient, over: 0 }
 		));
 		if( (result = _requires['inputverify'].check()) == true ){
-			
 			var fiat_conf = fiat_amount_field.text;
-			
-							
-							var loading = _requires['util'].showLoading(win.origin, { width: Ti.UI.FILL, height: Ti.UI.FILL, message: L('loading_send')});
-							
-							
-							_requires['network'].connectGETv2({
-					  					'method': 'fees/recommended',
-					   					 'callback': function(result){
-							
-							_requires['network'].connect({
-								'method': 'create_send',
-								'post': {
-									id: _requires['cache'].data.id,
-									address: _requires['cache'].data.address,
-									asset: params.asset,
-									destination: recipient.value,
-									quantity: temp_field.value,
-
-									fee_per_kb:result[_requires['cache'].data.current_fee],
-
-								},
-								'callback': function( result ){
-									loading.removeSelf();
-									if(params.asset == 'BTC'){
-										var feeInBTC = (result.fee / 100000000).toFixed(8);
-									}
-									else{
-										var feeInBTC = ((result.fee / 100000000) + 0.0000543).toFixed(8);
-									}
-									
-									var feeInCurrency = globals.requires['tiker'].to('BTC', feeInBTC, globals.requires['cache'].data.currncy);
-									var dialog = _requires['util'].createDialog({
-				title: L('label_confirm'),
-				message: L('text_sendconfirmation').format( { 'address': recipient.value, 'amount': temp_field.value, 'token':params.asset, 'amount2': fiat_conf })+'\n\n'+L('label_fee') + ' ' + feeInBTC + 'BTC (' + feeInCurrency + ')',
-				buttonNames: [L('label_cancel'), L('label_ok')]
-			});
-			dialog.addEventListener('click', function(e){
-				if( e.index != e.source.cancel ){
-			
-			_requires['auth'].check({ title: L('text_confirmsend'), callback: function(e){
-						if( e.success ){
-									loading = _requires['util'].showLoading(win.origin, { width: Ti.UI.FILL, height: Ti.UI.FILL, message: L('loading_send')});
-							
-									_requires['bitcore'].sign(result.unsigned_hex, {
-										'address': _requires['cache'].data.address,
-										'destination': recipient.value,
-										'callback': function(signed_tx){
-											_requires['network'].connect({
-												'method': 'sendrawtransaction',
-												'post': {
-													tx: signed_tx
-												},
-												'callback': function( result ){
-													if( params.channel != null ) globals.publich({'status': true});
-													
-													var dialog = _requires['util'].createDialog({
-														message: L('text_sent'),
-														buttonNames: [L('label_close')]
-													});
-													dialog.addEventListener('click', function(e){
-														globals.loadBalance(true);
-														win.close();
-													});
-													dialog.show();
-													
-													_requires['network'].connect({
-														'method': 'acs_push',
+			var loading = _requires['util'].showLoading(win.origin, { width: Ti.UI.FILL, height: Ti.UI.FILL, message: L('loading_send')});
+			_requires['network'].connectGETv2({
+				'method': 'fees/recommended',
+				'callback': function(result){
+					_requires['network'].connectPOSTv2({
+						'method': 'transactions/send',
+						'post': {
+							source: _requires['cache'].data.address,
+							token: params.asset,
+							destination: recipient.value,
+							quantity: temp_field.value,
+							fee_per_kb: result[_requires['cache'].data.current_fee]
+						},
+						'callback': function( result ){
+							loading.removeSelf();
+							if(params.asset == 'BTC'){
+								var feeInBTC = (result.fee / 100000000).toFixed2(8);
+							}
+							else{
+								var feeInBTC = ((result.fee / 100000000) + 0.0000543).toFixed2(8);
+							}
+							var feeInCurrency = globals.requires['tiker'].to('BTC', feeInBTC, globals.requires['cache'].data.currncy);
+							var dialog = _requires['util'].createDialog({
+								title: L('label_confirm'),
+								message: L('text_sendconfirmation').format( { 'address': recipient.value, 'amount': temp_field.value, 'token':params.asset, 'amount2': fiat_conf })+'\n\n'+L('label_fee') + ' ' + feeInBTC + 'BTC (' + feeInCurrency + ')' + '\n' + globals.fee_text[_requires['cache'].data.current_fee],
+								buttonNames: [L('label_cancel'), L('label_ok')]
+							});
+							dialog.addEventListener('click', function(e){
+								if( e.index != e.source.cancel ){
+									_requires['auth'].check({ title: L('text_confirmsend'), callback: function(e){
+										if( e.success ){
+											loading = _requires['util'].showLoading(win.origin, { width: Ti.UI.FILL, height: Ti.UI.FILL, message: L('loading_send')});
+											_requires['bitcore'].sign(result.unsigned_tx, {
+												'address': _requires['cache'].data.address,
+												'destination': recipient.value,
+												'callback': function(signed_tx){
+													_requires['network'].connectPOSTv2({
+														'method': 'transactions/broadcast',
 														'post': {
-															id: _requires['cache'].data.id,
-															type: 'send',
-															asset: params.asset,
-															destination: recipient.value,
-															quantity:temp_field.value
+															tx: signed_tx
 														},
 														'callback': function( result ){
-															Ti.API.log(JSON.stringify(result));
+															if( params.channel != null ) globals.publich({'status': true});
+															
+															var dialog = _requires['util'].createDialog({
+																message: L('text_sent'),
+																buttonNames: [L('label_close')]
+															});
+															dialog.addEventListener('click', function(e){
+																globals.loadBalance(true);
+																win.close();
+															});
+															dialog.show();
+															
+															_requires['network'].connectPOSTv2({
+																'method': 'pushnotification',
+																'post': {
+																	id: _requires['cache'].data.id,
+																	address: _requires['cache'].data.address,
+																	type: 'send',
+																	token: params.asset,
+																	destination: recipient.value,
+																	quantity:temp_field.value
+																},
+																'callback': function( result ){
+																	Ti.API.info('Pushed!');
+																	Ti.API.info(JSON.stringify(result));
+																},
+																'onError': function(error){
+																	Ti.API.info(error);
+																}
+															});
 														},
 														'onError': function(error){
-															Ti.API.info(error);
+															alert(error);
+														},
+														'always': function(){
+															loading.removeSelf();
 														}
 													});
 												},
-												'onError': function(error){
-													alert(error);
-												},
-												'always': function(){
+												'fail': function(){
+													alert(L('text_error_serierize'));
 													loading.removeSelf();
 												}
 											});
-										},
-										'fail': function(){
-											alert(L('text_error_serierize'));
-											loading.removeSelf();
 										}
-									});
-									
-									
-									
-					}
-					}});
-				
-					
-					}else{
-						loading.removeSelf();
-					}
-							});
-			dialog.show();
-						
-									
-									
-									
-									
-									
-									
-								},
-								'onError': function(error){
-									alert(error);
+									}});
+								}else{
 									loading.removeSelf();
 								}
 							});
-							
-							
-							
-											},
-			'onError' : function(error) {
-				alert(error);
-				loading.removeSelf();
-			}
-		});
-				
-							
-							
-							
-							
-						
+							dialog.show();
+						},
+						'onError': function(error){
+							alert(error);
+							loading.removeSelf();
+						}
+					});
+				},
+				'onError' : function(error) {
+					alert(error);
+					loading.removeSelf();
+				}
+			});			
 		}
 		else{
 			var dialog = _requires['util'].createDialog({

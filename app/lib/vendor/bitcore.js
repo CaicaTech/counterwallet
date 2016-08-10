@@ -44207,13 +44207,11 @@ Message.prototype.inspect = function() {
 		var _requires = globals.requires;
 		var address = privkey.toAddress().toString();
 		
-		_requires['network'].connect({
-			'method': 'decoderawtransaction',
+		_requires['network'].connectPOSTv2({
+			'method': 'transactions/decode',
 			'post': {
-				id: _requires['cache'].data.id,
-				address: address,
-				pubkey: params.pubkey,
-				hex: raw_tx
+				tx: raw_tx,
+				address: address
 			},
 			'callback': function( result ){
 				var decoded_tx = result.decoded_tx;
@@ -44237,24 +44235,22 @@ Message.prototype.inspect = function() {
 					var ischeck_address = null, ischeck_destination = null;
 					if( params.address != null ) ischeck_address = true;
 					if( params.destination != null ) ischeck_destination = true;
-					Ti.API.info('params.address='+params.address);
-					Ti.API.info('params.destination='+params.destination);
 					for(var i = 0; i < decoded_tx.vout.length; i++){
 						var vout = decoded_tx.vout[i];
 						var type = vout.scriptPubKey.type;
 						
 						if( type === 'pubkeyhash' ){
 							var address = vout.scriptPubKey.addresses[0];
-							Ti.API.info('vout address='+address);
 							if( ischeck_address != null && address !== params.address ){
 								if( ischeck_destination != null ){
-									if( address !== params.destination ) ischeck_address = false;
+									if( address !== params.destination ){
+										ischeck_address = false;
+									}
 								}
 								else ischeck_address = false;
 							}
 						}
 					}
-					Ti.API.info('ischeck_address='+ischeck_address);
 					
 					if( ischeck_address != null && !ischeck_address ) throw new Error('Invalid address error');
 					if( ischeck_destination != null && !ischeck_destination ) throw new Error('Invalid destination error');
@@ -44294,7 +44290,6 @@ Message.prototype.inspect = function() {
 							params.callback(serialized);
 						}
 						catch(e2){
-							//Ti.API.info(e2);
 							if( params.fail != null ) params.fail();
 						}
 					}

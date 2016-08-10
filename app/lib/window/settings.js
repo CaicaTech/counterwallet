@@ -100,57 +100,6 @@ exports.run = function(){
 	});
 	view.add(section);
 	
-	/*var box_user_name = createBox({ icon: 'icon_noimage.png', height: 40 });
-	box_user_name.top = 10;
-	var label_user_name = _requires['util'].makeLabel({
-		text: globals.user_name || L('text_noregisted'),
-		font:{ fontSize: 15 },
-		left: 60
-	});
-	
-	box_user_name.add(label_user_name);
-	box_user_name.addEventListener('click', function(){
-		var dialog = _requires['util'].createInputDialog({
-			title: L('label_rename'),
-			message: L('text_rename'),
-			value: ( label_user_name.text != null )? label_user_name.text: '',
-			buttonNames: [L('label_close'), L('label_ok')]
-		});
-		dialog.origin.addEventListener('click', function(e){
-			var inputText = (OS_ANDROID)?dialog.androidField.getValue():e.text;
-			if( e.index != e.source.cancel ){
-				if( inputText.length > 0 && inputText !== info.user_name ){
-					_requires['auth'].check({ title: L('text_confirmsend'), callback: function(e){
-						if( e.success ){
-							var loading = _requires['util'].showLoading(box_user_name, { width: Ti.UI.FILL, height: Ti.UI.FILL});
-							_requires['network'].connect({
-								'method': 'dbupdate',
-								'post': {
-									id: _requires['cache'].data.id,
-									updates: JSON.stringify( [
-										{ column: 'username', value: inputText }
-									])
-								},
-								'callback': function( result ){
-									label_user_name.text = globals.user_name = inputText;
-								},
-								'onError': function(error){
-									alert(error);
-								},
-								'always': function(){
-									loading.removeSelf();
-								}
-							});
-						}
-					}});
-				}
-			}
-		});
-		dialog.origin.show();
-	});
-	view.add(box_user_name);
-	view.add(createDescBox(L('text_desc_username')));
-	*/
 	var box_passphrase = createBox({ icon: 'icon_settings_password.png', height: 45 });
 	box_passphrase.top = 10;
 	view.add(box_passphrase);
@@ -181,7 +130,7 @@ exports.run = function(){
 						setTimeout(function(){
 							var dialog2 = _requires['util'].createDialog({
 								title: L('label_passphrase'),
-								message: _requires['cache'].data.passphrase,
+								message: L('text_passphrase').format({'passphrase': _requires['cache'].data.passphrase}),
 								buttonNames: [L('label_close')]
 							});
 							
@@ -618,7 +567,7 @@ exports.run = function(){
 				_requires['cache'].load();
 				if( globals.timer_shapshiftupdate != null ) clearInterval(globals.timer_shapshiftupdate);
 				win.close();
-				_windows['login'].run();
+				_windows['signin'].run();
 			}
 		});
 		dialog.show();
