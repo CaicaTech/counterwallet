@@ -1,9 +1,16 @@
 module.exports = (function() {
 	var self = {};
 	
-	function onerror(params, e){
-		Ti.API.error('Error: '+e.error+':'+e.code);
-		if( params.onError ) params.onError('Error: '+e.error);
+	function onerror(params, e, error){
+		var message = { type: 'Error', message: L('label_error') };
+		if( error != undefined && error != null ){
+			try{
+				Ti.API.error(error);
+				message = JSON.parse(error);
+			}
+			catch(e){}
+		}
+		if( params.onError ) params.onError( message );
 	};
 	
 	function onworm(params, json){
@@ -14,32 +21,6 @@ module.exports = (function() {
 	function reorg(params){
 		Ti.API.warn('Reorg occured...');
 		if( params.onReorg ) params.onReorg();
-	};
-	
-	self.connect = function( params ){
-		var xhr = Ti.Network.createHTTPClient();
-		xhr.open('POST', Alloy.CFG.api_uri + 'wallet/v1/' + params.method);
-		xhr.setRequestHeader('X-Api-Key', Alloy.Globals.api_key);
-		xhr.onload = function(){
-			if( params.binary ) params.callback( this.responseData );
-			else{
-				var json = JSON.parse( this.responseText );
-				if( json.status ) params.callback( json.result );
-				else{
-					if( json.errorMessage === 'reorg' ){
-						globals.reorg_occured();
-						reorg( params );
-					}
-					else onworm(params, json);
-				}
-				if( params.always != null ) params.always();
-			}
-		},
-		xhr.onerror = function(e){
-			onerror(params, e);
-			if( params.always != null ) params.always();
-		};
-		xhr.send( params.post );
 	};
 	
 	self.connectDELETEv2 = function( params ){
@@ -56,7 +37,7 @@ module.exports = (function() {
 			if( params.always != null ) params.always();
 		},
 		xhr.onerror = function(e){
-			onerror(params, e);
+			onerror(params, e, this.responseText);
 			if( params.always != null ) params.always();
 		};
 		xhr.send();
@@ -78,7 +59,7 @@ module.exports = (function() {
 			if( params.always != null ) params.always();
 		},
 		xhr.onerror = function(e){
-			onerror(params, e);
+			onerror(params, e, this.responseText);
 			if( params.always != null ) params.always();
 		};
 		xhr.send( JSON.stringify(params.post));
@@ -91,6 +72,7 @@ module.exports = (function() {
 		xhr.setRequestHeader('charset','utf-8');
   		xhr.setRequestHeader('X-Api-Key', Alloy.Globals.api_key);
   		xhr.onload = function(){
+  			Ti.API.error('POST Method: '+this.responseText);
    			var results = '';
     		try{
     			results = JSON.parse( this.responseText );
@@ -100,7 +82,7 @@ module.exports = (function() {
     		if( params.always != null ) params.always();
   		},
   		xhr.onerror = function(e){
-   			onerror(params, e);
+  			onerror(params, e, this.responseText);
     		if( params.always != null ) params.always();
   		};
   		xhr.send( JSON.stringify(params.post) );
@@ -120,8 +102,7 @@ module.exports = (function() {
 			if( params.always != null ) params.always();
 		},
 		xhr.onerror = function(e){
-(e);
-			onerror(params, e);
+			onerror(params, e, this.responseText);
 			if( params.always != null ) params.always();
 		};
 		xhr.send();
@@ -144,7 +125,7 @@ module.exports = (function() {
 			if( params.always != null ) params.always();
 		},
 		xhr.onerror = function(e){
-			onerror(params, e);
+			if( params.onError ) params.onError();
 			if( params.always != null ) params.always();
 		};
 		xhr.send();

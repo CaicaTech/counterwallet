@@ -5,7 +5,7 @@ exports.run = function(){
     var _requires = globals.requires;
     
 	var win = _requires['layer'].createWindow();
-	if( OS_IOS ) win.statusBarStyle = Ti.UI.iPhone.StatusBar.LIGHT_CONTENT;
+	if( OS_IOS ) win.statusBarStyle = Ti.UI.iOS.StatusBar.LIGHT_CONTENT;
     
     var currenciesArray = [];
     var main_view = Ti.UI.createScrollView({ backgroundColor:'#ececec', width: Ti.UI.FILL, height: Ti.UI.FILL });

@@ -199,35 +199,45 @@ module.exports.run = function() {
 	            color: "#ffffff"
 	        })
 	    });
-	    newwallet.addEventListener("touchstart", function() {
-	        whole_group.visible = policy.visible = false;
-	        if (true == gotRANDORG && true == gotCSRPNG) {
-	            var a = s.split(""), n = a.length;
-	            for (var i = n - 1; i > 0; i--) {
-	                var j = Math.floor(Math.random() * (i + 1));
-	                var tmp = a[i];
-	                a[i] = a[j];
-	                a[j] = tmp;
-	            }
-	            s = a.join("");
-	            s = s.substr(0, 256);
-	            {
-	                parseInt(s, 2);
-	            }
-	            globals.randomBytes = getRandom(128, parseInt(s, 2));
-	            Ti.Accelerometer.removeEventListener("update", getAccelerometer);
-	            if (false == isCreatingAccount) {
-	                isCreatingAccount = true;
-	                createAccount({
-	                    passphrase: null
-	                });
-	            }
-	        } else {
-	        	_requires["util"].createDialog({
-	                message: L('text_error_notsecure'),
-	                buttonNames: [ L("label_close") ]
-	            }).show();
-	        }
+	    newwallet.addEventListener("touchend", function() {
+	    	var dialog = _requires['util'].createDialog({
+				title : L('label_createaccount'),
+				message : L('text_createaccount'),
+				buttonNames : [L('label_cancel'), L('label_create')]
+			});
+			dialog.addEventListener('click', function(e) {
+				if (e.index != e.source.cancel) {
+					whole_group.visible = policy.visible = false;
+			        if (true == gotRANDORG && true == gotCSRPNG) {
+			            var a = s.split(""), n = a.length;
+			            for (var i = n - 1; i > 0; i--) {
+			                var j = Math.floor(Math.random() * (i + 1));
+			                var tmp = a[i];
+			                a[i] = a[j];
+			                a[j] = tmp;
+			            }
+			            s = a.join("");
+			            s = s.substr(0, 256);
+			            {
+			                parseInt(s, 2);
+			            }
+			            globals.randomBytes = getRandom(128, parseInt(s, 2));
+			            Ti.Accelerometer.removeEventListener("update", getAccelerometer);
+			            if (false == isCreatingAccount) {
+			                isCreatingAccount = true;
+			                createAccount({
+			                    passphrase: null
+			                });
+			            }
+			        } else {
+			        	_requires["util"].createDialog({
+			                message: L('text_error_notsecure'),
+			                buttonNames: [ L("label_close") ]
+			            }).show();
+			        }
+				}
+			});
+			dialog.show();
 	    });
 	    newwallet.top = 50;
 	    newwallet.height = 50;
@@ -242,7 +252,7 @@ module.exports.run = function() {
 	            color: "#ffffff"
 	        })
 	    });
-	    signin.addEventListener("touchstart", function() {
+	    signin.addEventListener("touchend", function() {
 	        var passphrase = field_passphrase.value;
 	        _requires["inputverify"].set(new Array({
 	            name: L("label_passphrase"),
@@ -287,7 +297,7 @@ module.exports.run = function() {
 	    hasuser_button.width = "90%";
 	    hasuser_button.top = 120;
 	    hasuser_button.backgroundColor = "#E45C61";
-	    hasuser_button.addEventListener("touchstart", function() {
+	    hasuser_button.addEventListener("touchend", function() {
 	        newwallet.animate({
 	            top: 0,
 	            opacity: 0,
@@ -362,7 +372,7 @@ module.exports.run = function() {
 	        color: "#ffffff",
 	        right: 10
 	    });
-	    text_inputbyeach.addEventListener("touchstart", function() {
+	    text_inputbyeach.addEventListener("touchend", function() {
 	        signin.visible = button_group.visible = false;
 	        word_num.visible = true;
 	        button_group_each.visible = true;
@@ -377,7 +387,7 @@ module.exports.run = function() {
 	        color: "#ffffff",
 	        left: 10
 	    });
-	    text_inputbyeach_next.addEventListener("touchstart", function() {
+	    text_inputbyeach_next.addEventListener("touchend", function() {
 	        move_next();
 	    });
 	    var label_each_cancel = _requires["util"].makeLabel({
@@ -387,7 +397,7 @@ module.exports.run = function() {
 	        },
 	        color: "#ffffff"
 	    });
-	    label_each_cancel.addEventListener("touchstart", function() {
+	    label_each_cancel.addEventListener("touchend", function() {
 	        newwallet.visible = true;
 	        newwallet.animate({
 	            top: 50,
@@ -414,7 +424,7 @@ module.exports.run = function() {
 	        color: "#ffffff",
 	        right: 10
 	    });
-	    text_inputbyeach_prev.addEventListener("touchstart", function() {
+	    text_inputbyeach_prev.addEventListener("touchend", function() {
 	        move_prev();
 	    });
 	    var button_group_each = _requires["util"].group({
@@ -446,7 +456,7 @@ module.exports.run = function() {
 	        color: "#ffffff",
 	        left: 10
 	    });
-	    label_back.addEventListener("touchstart", function() {
+	    label_back.addEventListener("touchend", function() {
 	        newwallet.visible = true;
 	        newwallet.animate({
 	            top: 50,
@@ -609,7 +619,7 @@ module.exports.run = function() {
 	        })
 	    });
 	    policy.bottom = 15;
-	    policy.addEventListener("click", function() {
+	    policy.addEventListener("touchend", function() {
 	        _windows["webview"].run({
 	            path: "terms"
 	        });

@@ -127,13 +127,16 @@ module.exports = (function() {
 		var field = Ti.UI.createTextField( merge(basic, params) );
 		if( params.keyboardType == Ti.UI.KEYBOARD_TYPE_DECIMAL_PAD ){
 			if( OS_IOS ){
-				var flexSpace = Ti.UI.createButton({ systemButton:Ti.UI.iPhone.SystemButton.FLEXIBLE_SPACE });
 				var doneButton = Ti.UI.createButton({ title : L('label_close'), width : 67, height : 32 });
-				doneButton.addEventListener('click', function(e){
-					field.blur();
-				});
-				field.keyboardToolbar = [flexSpace, flexSpace, doneButton];
+				var flexSpace = Ti.UI.createButton({ systemButton:Ti.UI.iOS.SystemButton.FLEXIBLE_SPACE });
 				field.keyboardToolbarHeight = 30;
+				field.keyboardToolbar = [flexSpace, flexSpace, doneButton];
+				
+				(function(field, doneButton) {
+					doneButton.addEventListener('click', function(e){
+						field.blur();
+					});
+				})(field, doneButton);
 			}
 		}
 		return field;
@@ -441,7 +444,7 @@ module.exports = (function() {
 			}
 			var button = self.group({
 				image: self.makeImage({
-				    image: '/images/img_button_easy.png',
+				    image: '/images/img_button_easy_ios.png',
 				    width: 60,
 				    opacity: opacity
 				}),
@@ -1009,7 +1012,11 @@ module.exports = (function() {
 							else apply(result);
 						},
 						'onError': function(error){
-							alert(error);
+							var dialog = _requires['util'].createDialog({
+								'title': error.type,
+								'message': error.message,
+								'buttonNames': [L('label_close')]
+							}).show();
 						}
 					});
 				}
@@ -1198,6 +1205,7 @@ module.exports = (function() {
 			asset_image.top = asset_image.left = asset_image.bottom = asset_image.right = 0;
 			icon.is_default = true;
 		}
+		
 		params.parent.add(icon);
 		
 		return;

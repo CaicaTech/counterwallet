@@ -8,7 +8,7 @@ module.exports = (function() {
 			orientationModes: [Ti.UI.PORTRAIT],
 			navBarHidden: true
 		});
-		if( OS_IOS ) win.origin.statusBarStyle = Ti.UI.iPhone.StatusBar.LIGHT_CONTENT;
+		if( OS_IOS ) win.origin.statusBarStyle = Ti.UI.iOS.StatusBar.LIGHT_CONTENT;
 		if( OS_ANDROID ) win.origin.windowSoftInputMode = Ti.UI.Android.SOFT_INPUT_ADJUST_PAN;
 		
 		win.view = Ti.UI.createView({ backgroundColor:'#ffffff', width: Ti.UI.FILL, height: Ti.UI.FILL });

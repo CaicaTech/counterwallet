@@ -106,14 +106,14 @@
 	<string name="exchange_cancel_confirm">本当にこの注文をキャンセルしますか？（マイナー手数料{fee}が発生します）</string>
 	<string name="exchange_cancel_cancel">キャンセルしない</string>
     <string name="exchange_cancel_ok">キャンセルする</string>
-	<string name="label_exchange_completed">COMPLETED</string>
-	<string name="label_exchange_expired">EXPIRED</string>
-	<string name="label_exchange_cancelled">CANCELLED</string>
+	<string name="label_exchange_completed">約定済</string>
+	<string name="label_exchange_expired">期限切れ</string>
+	<string name="label_exchange_cancelled">キャンセル済</string>
+	<string name="label_exchange_unconfirmed">承認中</string>
+	
 	<string name="exchange_confirm_canceled_message">注文をキャンセルしています。キャンセルが完了するまで10分ほど時間がかかります。</string>
 	
 	<string name="label_exchange_canceling">キャンセル中</string>
-	
-	
 	<string name="label_tab_indieboard">indieBoard(β)</string>
 	<string name="label_exchange_xcp_balance">XCPの保有数</string>
 	<string name="label_exchange_instructions1">取引したいトークンを選んで下さい。</string>
@@ -288,7 +288,7 @@
 	<string name="label_historytype_issuance">発行</string>
 	<string name="label_historytype_dividend">配当発行</string>
 	<string name="label_historytype_get_dividend">配当受取</string>
-	<string name="label_historytype_"></string>
+	<string name="label_historytype_cancel">キャンセル</string>
 	
 	<string name="lebal_orderhistory">取引履歴</string>
 	<string name="label_order_price">価格</string>
@@ -390,6 +390,7 @@
 	<string name="text_setting_completed">トークンをお楽しみ下さい！</string>
 	<string name="label_start">はじめる</string>
 	
+	<string name="loading_confirm">確認しています...</string>
 	<string name="loading_holders">保有者を読み込んでいます...</string>
 	<string name="loading_assetinfo">情報を読み込んでいます...</string>
 	<string name="loading_issue">発行しています...</string>
@@ -476,4 +477,13 @@
 	<string name="text_error_order">注文に失敗しました。少し後で再度試してください。</string>
 	<string name="text_error_notsecure">セキュリティに必要なデータを取得出来ませんでした。再起動して下さい。</string>
 	<string name="label_unconfirmed">承認中です</string>
+	
+	<string name="label_error">エラーが発生しました。</string>
+	<string name="label_mnemonic_12">復元パスフレーズの形式が合いません。\n復元パスフレーズが12単語になっていることを確認して下さい。</string>
+	<string name="label_mnemonic_invalidpassphrase">復元パスフレーズのフレーズが間違っています。{pos}番目のフレーズが正しいか確認して下さい。</string>
+	
+	<string name="label_createaccount">新規作成</string>
+	<string name="text_createaccount">新しいウォレットを作成します。宜しいですか？</string>
+	
+	<string name="label_error_issuancetokenname">トークン名には英字の大文字のみ使用できます。</string>
 </resources>

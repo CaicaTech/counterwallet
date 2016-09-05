@@ -1,14 +1,14 @@
 module.exports = (function() {
 	var self = {};
 	
-	function getDeviceToken( params ){
+	function getDeviceToken(){
 		var deviceToken = null;
 		function receivePush(e) {
 			try{
 				var message;
 				if( OS_IOS ) message = e.data.aps.alert;
 				else{
-					message = JSON.parse(e.payload).android.alert;
+					message = JSON.parse(e.data.payload).android.alert;
 				}
 				globals.requires['util'].createDialog({
 					message: message,
@@ -22,7 +22,8 @@ module.exports = (function() {
 			}
 		}
 		function deviceTokenSuccess(e) {
-			deviceToken = e.deviceToken;
+			if( OS_IOS ) deviceToken = e.deviceToken;
+			else deviceToken = e.registrationId;
 			globals.requires['network'].connectPUTv2({
 				'method': 'users/' + _requires['cache'].data.id + '/info/update',
 				'post': {
@@ -37,7 +38,11 @@ module.exports = (function() {
 					Ti.API.info(result);
 				},
 				'onError': function(error){
-					alert(error);
+					var dialog = _requires['util'].createDialog({
+						'title': error.type,
+						'message': error.message,
+						'buttonNames': [L('label_close')]
+					}).show();
 				}
 			});
 		}
@@ -77,20 +82,29 @@ module.exports = (function() {
 			}
 		}
 		else{
-			var CloudPush = require('ti.cloudpush');
-			CloudPush.retrieveDeviceToken({
-			    success: deviceTokenSuccess,
-			    error: deviceTokenError
-			});
-			CloudPush.addEventListener('callback', function (e) {
-				Ti.API.info(JSON.stringify(e));
-				receivePush(e);
+			var gcm = require("nl.vanvianen.android.gcm");
+			gcm.registerPush({
+				senderId: '',
+				notificationSettings: {
+					smallIcon: 'notification_icon.png',
+					largeIcon: 'appicon.png',
+					vibrate: false,
+					insistent: true,
+					group: 'IndieSquare Wallet',
+					localOnly: false,
+					priority: 0,
+					bigText: false
+				},
+				success: deviceTokenSuccess,
+				error: deviceTokenError,
+				callback: receivePush
 			});
 		}
 	}
 	
-	self.login = function( params ){
-		getDeviceToken({ id: params.id });
+	self.login = function(){
+		Ti.API.info('ACS ON');
+		getDeviceToken();
 	};
 	
     return self;

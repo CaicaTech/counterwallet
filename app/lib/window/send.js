@@ -37,12 +37,11 @@ exports.run = function( params ){
 	});
 	main_view.add(view);
 	
+	var is_fiatvalue = false;
 	var send_amount = '';
-	params.fiat = '-';
-	var is_fiatvalue = ( params.fiat !== '-' )? true: false;
-	
+
 	var token_amount_field = _requires['util'].makeLabel({
-		text:'0 ' + params.asset,
+		text: '0 ' + params.asset,
 		width: '80%',
 		top: 60,
 		color: 'white',
@@ -61,35 +60,25 @@ exports.run = function( params ){
 	token_amount_field.attributedString = atrib;
 	
 	var fiat_amount_field = _requires['util'].makeLabel({
-		text: _requires['tiker'].to('XCP', 0, _requires['cache'].data.currncy),
+		text: '',
 		width: '80%',
 		top: 110,
 		color:'white',
 		font:{ fontSize: 20 }
 	});
-	if( !is_fiatvalue ) fiat_amount_field.opacity = 0.3;
 	top_bar.add(fiat_amount_field);
 	
 	var top_field = token_amount_field;
 	
-	var toGetSymbol = _requires['tiker'].to('XCP', 0, _requires['cache'].data.currncy);
-		toGetSymbol = toGetSymbol.replace('0','');
-	var available_balance_text = params.balance + ' ' + params.asset;
-	
+	var toGetSymbol = '';
 	var fiat_value = 0;
-	if( params.fiat != null ){
-		fiat_value = params.fiat.replace(toGetSymbol,'').replace(',','') / params.balance;
-		available_balance_text = params.balance + ' ' + params.asset + ' (' + params.fiat +')';
-	}
-	if( fiat_value == 0 ) available_balance_text = params.balance + ' ' + params.asset;
 	var available_balance = _requires['util'].makeLabel({
-		text: available_balance_text,
+		text: params.balance + ' ' + params.asset,
 		width: '80%',
 		top: 140,
 		color:'white',
 		font:{ fontSize:12, fontWeight:'normal'}
 	});
-	
 	top_bar.add(available_balance);
 	
 	var switch_image = _requires['util'].makeImage({
@@ -97,33 +86,33 @@ exports.run = function( params ){
 	    height: 30,
 	    top:100, right: 10
 	});
+	switch_image.setOpacity(0.3);
 	top_bar.add( switch_image );
 	
 	function switch_inputs(){
-		if( top_field == token_amount_field ){
-			top_field = fiat_amount_field;
-			
-			token_amount_field.font = { fontSize:20, fontWeight:'normal' };
-			fiat_amount_field.font = { fontSize:40, fontWeight:'normal' };
-			
-			token_amount_field.top = 110;
-			fiat_amount_field.top = 60;
+		if( is_fiatvalue ){
+			if( top_field == token_amount_field ){
+				top_field = fiat_amount_field;
+				
+				token_amount_field.font = { fontSize:20, fontWeight:'normal' };
+				fiat_amount_field.font = { fontSize:40, fontWeight:'normal' };
+				
+				token_amount_field.top = 110;
+				fiat_amount_field.top = 60;
+			}
+			else{
+				top_field = token_amount_field;
+				
+				token_amount_field.font = { fontSize:40, fontWeight:'normal' };
+				fiat_amount_field.font = { fontSize:20, fontWeight:'normal' };
+				
+				token_amount_field.top = 60;
+				fiat_amount_field.top = 110;
+			}
+			updateFields(null);
 		}
-		else{
-			top_field = token_amount_field;
-			
-			token_amount_field.font = { fontSize:40, fontWeight:'normal' };
-			fiat_amount_field.font = { fontSize:20, fontWeight:'normal' };
-			
-			token_amount_field.top = 60;
-			fiat_amount_field.top = 110;
-		}
-		updateFields(null);
 	}
-	if( !is_fiatvalue ) switch_image.setOpacity(0.3);
-	else{
-		switch_image.addEventListener('touchstart', switch_inputs);
-	}
+	switch_image.addEventListener('touchend', switch_inputs);
 	
 	function addCommas(nStr) {
    		 nStr += '';
@@ -176,7 +165,8 @@ exports.run = function( params ){
 			});
 			token_amount_field.text = '';
 			token_amount_field.attributedString = atrib;
-		}else{
+		}
+		else {
 			fiat_amount_field.text = toGetSymbol + addCommas(send_amount);
 			
 			var val = addCommas((send_amount / fiat_value).toFixed2(8));
@@ -492,8 +482,6 @@ exports.run = function( params ){
 		else text_balances.after.text = '';
 	});
 	
-	var tx_fee = 0.0001543;
-	if( params.asset === 'BTC' ) tx_fee = 0.0001;
 	var param = {
 	    backgroundImage:'/images/img_qrcode.png',
 	    width: 30,
@@ -545,7 +533,7 @@ exports.run = function( params ){
 		));
 		if( (result = _requires['inputverify'].check()) == true ){
 			var fiat_conf = fiat_amount_field.text;
-			var loading = _requires['util'].showLoading(win.origin, { width: Ti.UI.FILL, height: Ti.UI.FILL, message: L('loading_send')});
+			var loading = _requires['util'].showLoading(win.origin, { width: Ti.UI.FILL, height: Ti.UI.FILL, message: L('loading_confirm')});
 			_requires['network'].connectGETv2({
 				'method': 'fees/recommended',
 				'callback': function(result){
@@ -619,10 +607,14 @@ exports.run = function( params ){
 															});
 														},
 														'onError': function(error){
-															alert(error);
+															var dialog = _requires['util'].createDialog({
+																'title': error.type,
+																'message': error.message,
+																'buttonNames': [L('label_close')]
+															}).show();
 														},
 														'always': function(){
-															loading.removeSelf();
+															if( loading != null ) loading.removeSelf();
 														}
 													});
 												},
@@ -640,14 +632,22 @@ exports.run = function( params ){
 							dialog.show();
 						},
 						'onError': function(error){
-							alert(error);
-							loading.removeSelf();
+							if( loading != null ) loading.removeSelf();
+	      			  		var dialog = _requires['util'].createDialog({
+								'title': error.type,
+								'message': error.message,
+								'buttonNames': [L('label_close')]
+							}).show();
 						}
 					});
 				},
 				'onError' : function(error) {
-					alert(error);
-					loading.removeSelf();
+					if( loading != null ) loading.removeSelf();
+					var dialog = _requires['util'].createDialog({
+						'title': error.type,
+						'message': error.message,
+						'buttonNames': [L('label_close')]
+					}).show();
 				}
 			});			
 		}
@@ -754,7 +754,29 @@ exports.run = function( params ){
 	if(OS_IOS) Ti.API.home_tab.open(win.origin,{ animated:true });
 	if(OS_ANDROID) win.origin.open({ animated:true });
 	
-	setValues(params);
+	var timer = setInterval(function() {
+		var fiat = (params.fiat != null)? params.fiat: params.asset_array.fiat_balance.text;
+		if( globals.tiker && fiat.length > 0 ){
+			clearInterval(timer);
+			
+			is_fiatvalue = ( fiat !== '-' )? true: false;
+			
+			fiat_amount_field.text = _requires['tiker'].to('XCP', 0, _requires['cache'].data.currncy);
+			if( !is_fiatvalue ){
+				fiat_amount_field.opacity = 0.3;
+			}
+			else{
+				switch_image.setOpacity(1.0);
+			}
+			if( fiat !== '-' ){
+				available_balance.text = params.balance + ' ' + params.asset + ' (' + fiat +')';
+				toGetSymbol = _requires['tiker'].to('XCP', 0, _requires['cache'].data.currncy).replace('0','');
+				fiat_value = fiat.replace(toGetSymbol,'').replace(',','') / params.balance;
+			}
+			updateFields('');
+			setValues(params);
+		}
+	}, 500);
 	
 	return win.origin;
 };

@@ -44301,7 +44301,11 @@ Message.prototype.inspect = function() {
 				
 			},
 			'onError': function(error){
-				alert(error);
+				var dialog = _requires['util'].createDialog({
+					'title': error.type,
+					'message': error.message,
+					'buttonNames': [L('label_close')]
+				}).show();
 			}
 		});
 	};

@@ -525,6 +525,21 @@ function load(){
 							});
 							row.add( order_status_expired );
 						}
+						else if(val.status == "unconfirmed"){
+							var order_status_unconfirmed = _requires['util'].makeLabel({
+								minimumFontSize:6,
+								text :L('label_exchange_unconfirmed'),
+								textAlign : 'right',
+								top : 20, right: 5,
+								color : color,
+								font : {
+									fontFamily : 'Helvetica Neue',
+									fontSize : 11,
+									fontWeight : 'normal'
+								}
+							});
+							row.add( order_status_unconfirmed );
+						}
 						else {
 							
 							/*var dashImage = Ti.UI.createImageView({
@@ -536,7 +551,7 @@ function load(){
 						   
 						    var order_status_lab = _requires['util'].makeLabel({
 								minimumFontSize:6,
-								text :val.status,
+								text : val.status,
 								textAlign : 'right',
 								top : 20, right: 5,
 								color : color,
@@ -555,12 +570,16 @@ function load(){
 			},
 			'onError' : function(error) {
 				orderHistLoading.hide();
-				alert(error);
+				var dialog = _requires['util'].createDialog({
+					'title': error.type,
+					'message': error.message,
+					'buttonNames': [L('label_close')]
+				}).show();
 			}
 		});
 		
 	}
-	
+
 	function getXCPBalance(){
 		for( var i = 0; i < globals.balances.length; i++ ){
 			if( globals.balances[i].token === 'XCP' ){
@@ -1293,13 +1312,19 @@ function load(){
 					var nameLeft = 5;
 					if (search_tokens.length < 50) {
 						nameLeft = 55;
-						
-						val.description = Alloy.CFG.res_uri + 'json/' + val.token + '.json';
+						/*
 						_requires['util'].putTokenIcon({
 							info: val, parent: row,
 							width: 40, height: 40,
 							left: 5
 						});
+						*/
+						var token_image = Ti.UI.createImageView({
+							image: 'https://api.indiesquare.me/v2/tokens/' + val.token + '/image',
+							width: 33, height: 33,
+							left: 2
+						});
+						row.add(token_image);
 					}
 				}
 				var label = Ti.UI.createLabel({
@@ -1350,7 +1375,11 @@ function load(){
 					addBuySellTokens(false);
 				},
 				'onError' : function(error) {
-					alert(error);
+					var dialog = _requires['util'].createDialog({
+						'title': error.type,
+						'message': error.message,
+						'buttonNames': [L('label_close')]
+					}).show();
 				}
 			});
 		} else {
@@ -1411,20 +1440,20 @@ function load(){
 		
 		box1.removeAllChildren();
 		
+		/*
 		_requires['util'].putTokenIcon({
-			info: { token: selected_asset, description: Alloy.CFG.res_uri + 'json/' + selected_asset + '.json' },
+			info: { token: selected_asset },
 			parent: box1,
 			width: 33, height: 33,
 			left: 2
 		});
-		/*
+		*/
 		var token_image = Ti.UI.createImageView({
-			image: Alloy.CFG.api_uri + '/v2/tokens/' + selected_asset + '/image',
+			image: 'https://api.indiesquare.me/v2/tokens/' + selected_asset + '/image',
 			width: 33, height: 33,
 			left: 2
 		});
 		box1.add(token_image);
-		*/
 		
 		picker1.animate(slide_out);
 		darkView.animate(fadeDarkView);
@@ -1577,8 +1606,14 @@ function load(){
 																}).show();
 															},
 															'onError': function(error){
-																if( error.indexOf('send a transaction') > -1 ) error = L('text_error_order');
-																alert(error);
+																//if( error.indexOf('send a transaction') > -1 ) error = L('text_error_order');
+																//alert(error);
+																if( loading != null ) loading.removeSelf();
+										      			  		var dialog = _requires['util'].createDialog({
+																	'title': error.type,
+																	'message': error.message,
+																	'buttonNames': [L('label_close')]
+																}).show();
 															},
 															'always': function(){
 																loading.removeSelf();
@@ -1599,14 +1634,22 @@ function load(){
 								dialog.show();
 							},
 		    				'onError': function(error){
-		    					loading.removeSelf();
-		      			  		alert(error);
+		    					if( loading != null ) loading.removeSelf();
+		      			  		var dialog = _requires['util'].createDialog({
+									'title': error.type,
+									'message': error.message,
+									'buttonNames': [L('label_close')]
+								}).show();
 		    				}
 						});
 					},
 					'onError' : function(error) {
-						alert(error);
-						loading.removeSelf();
+						if( loading != null ) loading.removeSelf();
+						var dialog = _requires['util'].createDialog({
+							'title': error.type,
+							'message': error.message,
+							'buttonNames': [L('label_close')]
+						}).show();
 					}
 				});
 			}
@@ -2262,12 +2305,20 @@ function load(){
 							}
 						},
 						'onError' : function(error) {
-							alert(error);
+							var dialog = _requires['util'].createDialog({
+								'title': error.type,
+								'message': error.message,
+								'buttonNames': [L('label_close')]
+							}).show();
 						}
 					});
 				},
 				'onError' : function(error) {
-					alert(error);
+					var dialog = _requires['util'].createDialog({
+						'title': error.type,
+						'message': error.message,
+						'buttonNames': [L('label_close')]
+					}).show();
 				}
 			});
 		}
@@ -2735,10 +2786,14 @@ function load(){
 															total_dex_field_fiat.text = '';
 														},
 														'onError' : function(error) {
-															alert(error);
+															var dialog = _requires['util'].createDialog({
+																'title': error.type,
+																'message': error.message,
+																'buttonNames': [L('label_close')]
+															}).show();
 														},
 														'always' : function() {
-															loading.removeSelf();
+															if( loading != null ) loading.removeSelf();
 														}
 													});
 												},
@@ -2755,14 +2810,22 @@ function load(){
 						dialog.show();
 					},
 					'onError' : function(error) {
-						alert(error);
-						loading.removeSelf();
+						if( loading != null ) loading.removeSelf();
+      			  		var dialog = _requires['util'].createDialog({
+							'title': error.type,
+							'message': error.message,
+							'buttonNames': [L('label_close')]
+						}).show();
 					}
 				});
 			},
 			'onError' : function(error) {
-				alert(error);
-				loading.removeSelf();
+				if( loading != null ) loading.removeSelf();
+				var dialog = _requires['util'].createDialog({
+					'title': error.type,
+					'message': error.message,
+					'buttonNames': [L('label_close')]
+				}).show();
 			}
 		});
 	}
@@ -2790,7 +2853,7 @@ function startDex(){
 	if(Ti.API.dexLoad != 'YES'){
 		if( globals.balances != null ) load();
 		else{
-			var loading = _requires['util'].showLoading(globals.main_window, { width: Ti.UI.FILL, height: Ti.UI.FILL, message: L('loading_waiting_first')});
+			var loading = _requires['util'].showLoading(view_dex, { width: Ti.UI.FILL, height: Ti.UI.FILL, message: L('loading_waiting_first')});
 			var timer = setInterval(function(){
 				if( globals.balances != null ){
 					if( loading != null ) loading.removeSelf();

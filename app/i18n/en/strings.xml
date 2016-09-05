@@ -144,6 +144,7 @@
 	<string name="label_exchange_completed">COMPLETED</string>
 	<string name="label_exchange_expired">EXPIRED</string>
 	<string name="label_exchange_cancelled">CANCELLED</string>
+	<string name="label_exchange_unconfirmed">UNCONFIRMED</string>
 	
 	<string name="exchange_confirm_canceled_message">Your order has been canceled, this may take around 10 minuets to confirm</string>
 	<string name="label_exchange_canceling">CANCELLING...</string>
@@ -270,7 +271,7 @@
 	<string name="label_historytype_issuance">Issue</string>
 	<string name="label_historytype_dividend">Dividend issue</string>
 	<string name="label_historytype_get_dividend">Dividend receive</string>
-	<string name="label_historytype_"></string>
+	<string name="label_historytype_cancel">Order cancel</string>
 	
 	<string name="lebal_orderhistory">Order History</string>
 	<string name="label_order_price">Price</string>
@@ -390,6 +391,7 @@
 	<string name="text_setting_completed">Enjoy the world of tokens!</string>
 	<string name="label_start">START</string>
 	
+	<string name="loading_confirm">connecting...</string>
 	<string name="loading_holders">Reading holders...</string>
 	<string name="loading_assetinfo">Reading information...</string>
 	<string name="loading_issue">Creating...</string>
@@ -475,4 +477,13 @@
 	<string name="text_error_order">Order error. Please try again later.</string>
 	<string name="text_error_notsecure">Could not get the data for the security. Please relaunch this app.</string>
 	<string name="label_unconfirmed">Unconfirmed</string>
+	
+	<string name="label_error">Error occured</string>
+	<string name="label_mnemonic_12">Incorrect Passphrase used.\nIt should be exactly 12 words. No more, no less.</string>
+	<string name="label_mnemonic_invalidpassphrase">Invalid Passphrase entered.\nMake sure the phrase located at {pos}.</string>
+	
+	<string name="label_createaccount">Create New Account</string>
+	<string name="text_createaccount">Are you sure you want to create new account?</string>
+	
+	<string name="label_error_issuancetokenname">The token name can be used only uppercase letters.</string>
 </resources>

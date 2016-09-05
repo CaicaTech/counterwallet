@@ -7,7 +7,7 @@ if( cache.load() ){
 	var b = require('crypt/bcrypt');
 	bcrypt = new b();
 	Ti.App.addEventListener('resumed', function(e) {
-		if( OS_IOS ) Ti.UI.iPhone.setAppBadge(0);
+		if( OS_IOS ) Ti.UI.iOS.setAppBadge(0);
 		if( globals.isReorg ) globals.backgroundfetch();
 		var url = null;
 		if( OS_ANDROID && e.args != null ){

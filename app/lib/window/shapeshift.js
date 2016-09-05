@@ -1,7 +1,7 @@
 exports.run = function(params) {
 	var _requires = globals.requires;
 	var win = _requires['layer'].createWindow();
-	if( OS_IOS ) win.statusBarStyle = Ti.UI.iPhone.StatusBar.LIGHT_CONTENT;
+	if( OS_IOS ) win.statusBarStyle = Ti.UI.iOS.StatusBar.LIGHT_CONTENT;
 	var didLoadOnce = false;
 	var _windows = globals.windows;
 	
@@ -210,12 +210,8 @@ exports.run = function(params) {
 		    if(progress > 100){
 		    	progress = 0;
 		    	getBalances();
-		    	//getInfoXCPBTC();
-		    	//getInfoBTCXCP();
 		    }
 		}, 10);
-		
-		//var start_loading = _requires['util'].showLoading(theWindow, { width: Ti.UI.FILL, height: Ti.UI.FILL});
 		
 		switch_image.addEventListener('touchstart', function(){
 			send_amount = '0';
@@ -694,7 +690,12 @@ exports.run = function(params) {
 																		updateFields(null);
 																	},
 																	'onError': function(error){
-																		alert(error);
+																		if( loading != null ) loading.removeSelf();
+												      			  		var dialog = _requires['util'].createDialog({
+																			'title': error.type,
+																			'message': error.message,
+																			'buttonNames': [L('label_close')]
+																		}).show();
 																	},
 																	'always': function(){
 																		if( loading != null ) loading.removeSelf();
@@ -723,20 +724,32 @@ exports.run = function(params) {
 								 	dialog.show();
 								},
 								'onError': function(error){
-									alert(error);
 									if( loading != null ) loading.removeSelf();
+			      			  		var dialog = _requires['util'].createDialog({
+										'title': error.type,
+										'message': error.message,
+										'buttonNames': [L('label_close')]
+									}).show();
 								}
 							});
 						},
 						'onError' : function(error) {
-							alert(error);
-							loading.removeSelf();
+							if( loading != null ) loading.removeSelf();
+							var dialog = _requires['util'].createDialog({
+								'title': error.type,
+								'message': error.message,
+								'buttonNames': [L('label_close')]
+							}).show();
 						}
 					});
 				},
 				'onError': function(error){
-					alert(error);
 					if( loading != null ) loading.removeSelf();
+					var dialog = _requires['util'].createDialog({
+						'title': error.type,
+						'message': error.message,
+						'buttonNames': [L('label_close')]
+					}).show();
 				}
 			});
 		});

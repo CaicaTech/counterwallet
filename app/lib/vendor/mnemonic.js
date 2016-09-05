@@ -61,13 +61,13 @@
             this.random = getRandom(bits);
         } else {
         	if (args.length != 12) {
-                throw new Error('Incorrect Passphrase used (It should be exactly 12 words. No more, no less)');
+                throw new Error(L('label_mnemonic_12'));
             }
             var str_words = Mnemonic.words.toString();
 			for (var i = 0; i < args.length; i++) {
 			    if (str_words.indexOf(','+args[i]+',') > -1) {}
 			    else{
-					throw new Error('Invalid Passphrase entered '+i);
+					throw new Error(L('label_mnemonic_invalidpassphrase').format({'pos': (i + 1)}));
 			    }
 			}
             // Reconstruct from words

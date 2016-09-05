@@ -7,30 +7,26 @@ var theWindow = Ti.UI.createWindow({
 });
 
 if (OS_ANDROID) theWindow.windowSoftInputMode = Ti.UI.Android.SOFT_INPUT_ADJUST_PAN;
-if (OS_IOS)
-	theWindow.statusBarStyle = Ti.UI.iPhone.StatusBar.LIGHT_CONTENT;
-	function numberWithCommas(x) {
-		
-		var res = x.toString().split(".");
-		var firstString = res[0];
-		
-		var endString  = "";
-		var foundEnd = false;
-		for (var i = 0; i < res.length; i++) {
-			var val = res[i];
-			if(i > 0){
-				foundEnd = true;
-				endString = endString + val.toString();	
-			}
-			
+if (OS_IOS) theWindow.statusBarStyle = Ti.UI.iOS.StatusBar.LIGHT_CONTENT;
+
+function numberWithCommas(x) {
+	var res = x.toString().split(".");
+	var firstString = res[0];
+	var endString  = "";
+	var foundEnd = false;
+	for (var i = 0; i < res.length; i++) {
+		var val = res[i];
+		if(i > 0){
+			foundEnd = true;
+			endString = endString + val.toString();	
 		}
-		if(foundEnd == true){
-		 	return firstString.replace(/\B(?=(\d{3})+(?!\d))/g, ",") + '.' + endString.toString();	
-		}
-		else{
-			return firstString.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-		}
-   
+	}
+	if(foundEnd == true){
+	 	return firstString.replace(/\B(?=(\d{3})+(?!\d))/g, ",") + '.' + endString.toString();	
+	}
+	else{
+		return firstString.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+	}
 }
 exports.run = function() {
 	var _windows = globals.windows;
@@ -39,107 +35,341 @@ exports.run = function() {
 	globals.main_window = theWindow;
 		
 	_requires['bitcore'].init(_requires['cache'].data.passphrase);
-		var defaultAddress = globals.requires['bitcore'].createHDAddress(0);
-		if( Ti.App.Properties.getString("current_address") != null){
-			_requires['cache'].data.address = Ti.App.Properties.getString("current_address");
-		}
-		
-		function getWallets( isbalanceupdate ) {
-			var loading = _requires['util'].showLoading(theWindow, {
-				width : Ti.UI.FILL,
-				height : Ti.UI.FILL
-			});
-			_requires['network'].connectGETv2({
-				'method' : 'users/' + _requires['cache'].data.id + '/addresses',
-				'callback' : function(results) {
-					if (results != null) walletsArray = results;
 	
-					var counter = 0;
-					for (var key in walletsArray) {
-						var anObject = walletsArray[key];
-						if( anObject.address == _requires['cache'].data.address ){
-							globals.requires['bitcore'].changeHD(counter);
-							if(typeof anObject.tag !== 'undefined'){
-								home_title_center.text = anObject.tag;
-								walletButton.wallet_button.text = anObject.tag;
-							}
-							break;
-						}
-						counter++;
-					}
-					for (var key in walletsArray) {
-						var anObject = walletsArray[key];
-						if(typeof anObject.tag !== 'undefined'){
-					   		 Ti.App.Properties.setString(anObject.address,anObject.tag);
-					   	}
-						
-					}
-					globals.address_num = walletsArray.length;
-					addWallets();
-					setImageQR();
-					if( isbalanceupdate ) globals.loadBalance(true);
-				},
-				'onError' : function(error) {
-					if( isbalanceupdate ) globals.loadBalance(true);
-				},
-				'always' : function() {
-					if( loading != null ) loading.removeSelf();
-				}
-			});
-		}
-		getWallets(true);
-		var currenciesArray = [];
-		var walletsArray = [];
-		var display_height = _requires['util'].getDisplayHeight();
-		var win = {};
-		win.origin = theWindow;
+	var defaultAddress = globals.requires['bitcore'].createHDAddress(0);
+	if( Ti.App.Properties.getString("current_address") != null){
+		_requires['cache'].data.address = Ti.App.Properties.getString("current_address");
+		_requires['cache'].save();
+	}
 	
-		var view = Ti.UI.createView({
-			backgroundColor : '#FFFFFF',
-			width : '100%',
-			height : Ti.UI.FILL
-		});
-		
-		var home_view = Ti.UI.createView({
-			backgroundColor : '#FFFFFF',
-			width : '100%',
-			height : Ti.UI.FILL
-		});
-		
-		var middle_view = Ti.UI.createView({
-			backgroundColor : '#FFFFFF',
-			width : '100%',
-			height : Ti.UI.FILL
-		});
-		if (OS_ANDROID) {
-			Ti.include('/window/receive.js');
-			Ti.include('/window/dex.js');
-			Ti.include('/window/history.js');
-		} else {
-			Ti.include('window/receive.js');
-			Ti.include('window/dex.js');
-			Ti.include('window/history.js');
-		}
-		
-		var top_bar = Ti.UI.createView({
-			backgroundColor : '#e54353',
+	function getWallets( isbalanceupdate ) {
+		var loading = _requires['util'].showLoading(theWindow, {
 			width : Ti.UI.FILL,
-			height : 60
+			height : Ti.UI.FILL
 		});
-		top_bar.top = 0;
-		
-		function addWallets() {
-			wallet_view.height = 50 + (walletsArray.length * 90);
-			if(wallet_view.height > display_height - 141){
-				wallet_view.height = display_height - 141;
+		_requires['network'].connectGETv2({
+			'method' : 'users/' + _requires['cache'].data.id + '/addresses',
+			'callback' : function(results) {
+				if (results != null) walletsArray = results;
+
+				var counter = 0;
+				for (var key in walletsArray) {
+					var anObject = walletsArray[key];
+					if( anObject.address == _requires['cache'].data.address ){
+						globals.requires['bitcore'].changeHD(counter);
+						if(typeof anObject.tag !== 'undefined'){
+							home_title_center.text = anObject.tag;
+							walletButton.wallet_button.text = anObject.tag;
+						}
+						break;
+					}
+					counter++;
+				}
+				for (var key in walletsArray) {
+					var anObject = walletsArray[key];
+					if(typeof anObject.tag !== 'undefined'){
+				   		 Ti.App.Properties.setString(anObject.address,anObject.tag);
+				   	}
+					
+				}
+				globals.address_num = walletsArray.length;
+				addWallets();
+				setImageQR();
+				if( isbalanceupdate ) globals.loadBalance(true);
+			},
+			'onError' : function(error) {
+				if( error.code == 100009 ){
+					var dialog = _requires['util'].createDialog({
+						'title': error.type,
+						'message': error.message,
+						'buttonNames': [L('label_close')]
+					}).show();
+				}
+				else if( isbalanceupdate ) globals.loadBalance(true);
+			},
+			'always' : function() {
+				if( loading != null ) loading.removeSelf();
 			}
-			addWallet.bottom = 5;
+		});
+	}
+	getWallets(true);
+	
+	var currenciesArray = [];
+	var walletsArray = [];
+	var display_height = _requires['util'].getDisplayHeight();
+	var win = {};
+	win.origin = theWindow;
+
+	var view = Ti.UI.createView({
+		backgroundColor : '#FFFFFF',
+		width : '100%',
+		height : Ti.UI.FILL
+	});
+	
+	var home_view = Ti.UI.createView({
+		backgroundColor : '#FFFFFF',
+		width : '100%',
+		height : Ti.UI.FILL
+	});
+	
+	var middle_view = Ti.UI.createView({
+		backgroundColor : '#FFFFFF',
+		width : '100%',
+		height : Ti.UI.FILL
+	});
+	if (OS_ANDROID) {
+		Ti.include('/window/receive.js');
+		Ti.include('/window/dex.js');
+		Ti.include('/window/history.js');
+	} else {
+		Ti.include('window/receive.js');
+		Ti.include('window/dex.js');
+		Ti.include('window/history.js');
+	}
+	
+	var top_bar = Ti.UI.createView({
+		backgroundColor : '#e54353',
+		width : Ti.UI.FILL,
+		height : 60
+	});
+	top_bar.top = 0;
+	
+	function addWallets() {
+		wallet_view.height = 50 + (walletsArray.length * 90);
+		if(wallet_view.height > display_height - 141){
+			wallet_view.height = display_height - 141;
+		}
+		addWallet.bottom = 5;
+			
+		var counter = 0;
+		wallets.setRowDesign(walletsArray, function(row, val) {
+			var an_address = val.address;
+			var walletName = Ti.UI.createLabel({
+				text :getTagForAddress(an_address),
+				font : {
+					fontFamily : 'HelveticaNeue-Light',
+					fontSize : 20,
+					fontWeight : 'normal'
+				},
+				color : 'black',
+				width : 'auto',
+				height : 'auto',
+				top : 10,
+				left : 10
+			});
+			row.add(walletName);
+			walletAddressLab = Ti.UI.createLabel({
+				text : an_address,
+				font : {
+					fontFamily : 'HelveticaNeue-Light',
+					fontSize : 10,
+					fontWeight : 'normal'
+				},
+				color : 'black',
+				width : 'auto',
+				height : 'auto',
+				top : 40,
+				left : 10
+			});
+			row.add(walletAddressLab);
+			var select_button = Ti.UI.createButton({
+				id:counter,
+				backgroundColor : "transparent",
+					width : '100%',
+					height : 40
+			});
+			select_button.right = 20;
+			row.add(select_button);
+			
+			select_button.addEventListener('click', function(e) {
+				var valObject = walletsArray[e.source.id];
+				if( _requires['cache'].data.address !== valObject.address ){
+					walletButton.wallet_button.text = getTagForAddress(valObject.address);
+					home_title_center.text = getTagForAddress(valObject.address);
+					_requires['cache'].data.address = valObject.address;
+					Ti.App.Properties.setString("current_address", valObject.address);
+					globals.requires['bitcore'].changeHD(e.source.id);
+					
+					wallet_address.text = valObject.address;
+					loadHistory(true);
+					globals.loadBalance(true);
+					setImageQR();
+				}
+				walletViewOpen = false;
+				wallet_view.animate(closeWalletAnimation);
+				wallet_arrow.animate(rightArrowAnimation);
+			});
+			
+			var rename_button = Ti.UI.createButton({
+				id:counter,
+				backgroundColor : "gray",
+				title : L('title_rename'),
+				color : 'white',
+				width : 60,
+				height : 25,
+				textAlign : Ti.UI.TEXT_ALIGNMENT_CENTER,
+				font : {
+					fontFamily : 'HelveticaNeue',
+					fontSize : 10,
+					fontWeight : 'light'
+				},
+			});
+			rename_button.left = 10;
+			rename_button.bottom = 5;
+			row.add(rename_button);
+			
+			rename_button.addEventListener('click', function(e) {
+				var valObject = walletsArray[e.source.id];
+				var dialog = _requires['util'].createInputDialog({
+					title : L('label_rename'),
+					message : L('text_wallet_rename'),
+					value : '',
+					buttonNames : [L('label_close'), L('label_ok')]
+				});
 				
-			var counter = 0;
-			wallets.setRowDesign(walletsArray, function(row, val) {
-				var an_address = val.address;
-				var walletName = Ti.UI.createLabel({
-					text :getTagForAddress(an_address),
+				dialog.origin.addEventListener('click', function(e) {
+					var inputText = (OS_ANDROID) ? dialog.androidField.getValue() : e.text;
+					if (e.index != e.source.cancel) {
+						if (inputText.length > 0) {
+							
+							var loading = _requires['util'].showLoading(theWindow, {
+								width : Ti.UI.FILL,
+								height : Ti.UI.FILL
+							});
+
+							_requires['network'].connectPUTv2({
+								'method' : 'tags/'+ valObject.id,
+								'post' : {
+									user_id : _requires['cache'].data.id,
+									address : valObject.address,
+									tag : inputText
+								},
+								'callback' : function(result) {
+									getWallets(false);
+									if(wallet_address.text == valObject.address){
+										walletButton.wallet_button.text = inputText;
+										home_title_center.text = inputText;
+									}
+									Ti.App.Properties.setString(valObject.address, inputText);
+								},
+								'onError' : function(error) {
+									Ti.API.log('error tags' + error);
+								},
+								'always' : function() {
+									if( loading != null ) loading.removeSelf();
+								}
+							});
+
+						}
+					}
+				});
+				dialog.origin.show();
+			});
+			
+			var hide_button = Ti.UI.createButton({
+				id:counter,
+				backgroundColor : "gray",
+				title : L('label_hide'),
+				color : 'white',
+				width : 60,
+				height : 25,
+				textAlign : Ti.UI.TEXT_ALIGNMENT_CENTER,
+				font : {
+					fontFamily : 'HelveticaNeue',
+					fontSize : 10,
+					fontWeight : 'light'
+				},
+			});
+			hide_button.left = 80;
+			hide_button.bottom = 5;
+			
+			if(val.address !== defaultAddress && counter == globals.address_num - 1){
+				row.add(hide_button);
+			}
+			
+			hide_button.addEventListener('click', function(e) {
+				var valObject = walletsArray[e.source.id];
+				var dialog = _requires['util'].createDialog({
+					title : L('label_hide'),
+					message : L('label_hide_text'),
+					buttonNames : [L('label_close'), L('label_ok')]
+				});
+				dialog.addEventListener('click', function(e) {
+					if (e.index != e.source.cancel) {
+						var loading = _requires['util'].showLoading(theWindow, {
+							width : Ti.UI.FILL,
+							height : Ti.UI.FILL
+						});
+
+						_requires['network'].connectDELETEv2({
+							'method' : 'tags/'+ valObject.id,
+							'post' : {},
+							'callback' : function(result) {
+								_requires['network'].connectPUTv2({
+									'method' : 'users/' + _requires['cache'].data.id + '/preference/update',
+									'post' : {
+										num_addresses_used : walletsArray.length - 1
+									},
+									'callback' : function() {
+										if( valObject.address === wallet_address.text ){
+											walletButton.wallet_button.text = getTagForAddress(defaultAddress);
+											home_title_center.text = getTagForAddress(defaultAddress);
+											Ti.App.Properties.setString("current_address", defaultAddress);
+											wallet_address.text = defaultAddress;
+											_requires['cache'].data.address = defaultAddress;
+											_requires['cache'].save();
+											globals.loadBalance(true);
+											setImageQR();
+										}
+										getWallets(false);
+									},
+									'onError' : function(error) {
+										// Failed or Cancel
+										//globals.requires['bitcore'].changeHD(num_hd_address - 1);
+									},
+									'always' : function() {
+										if( loading != null ) loading.removeSelf();
+									}
+								});
+							},
+							'onError' : function(error) {
+								Ti.API.log('error remove' + error);
+							},
+							'always' : function() {
+								if( loading != null ) loading.removeSelf();
+							}
+						});
+					}
+				});
+				dialog.show();
+			});
+			counter++;
+			return row;
+		});
+	}
+
+	var rightArrowTransformation = Ti.UI.create2DMatrix();
+    rightArrowTransformation = rightArrowTransformation.rotate(0); // this does not work
+    var rightArrowAnimation = Ti.UI.createAnimation({
+      transform : rightArrowTransformation,
+      duration: 200
+ 	});
+ 	
+ 	var downArrowTransformation = Ti.UI.create2DMatrix();
+    downArrowTransformation = downArrowTransformation.rotate(90); // this does not work
+    var downArrowAnimation = Ti.UI.createAnimation({
+    	transform : downArrowTransformation,
+    	duration: 200
+ 	});
+	
+	function addCurrencies() {
+		var tikers = globals.tiker;
+		currenciesArray = [];
+		currencies.setRowDesign(tikers, function(row, val) {//why is key visible here?
+			if (key !== 'XCP') {
+				currenciesArray.push(key);
+				var label = Ti.UI.createLabel({
+					text : key,
 					font : {
 						fontFamily : 'HelveticaNeue-Light',
 						fontSize : 20,
@@ -148,285 +378,59 @@ exports.run = function() {
 					color : 'black',
 					width : 'auto',
 					height : 'auto',
-					top : 10,
 					left : 10
 				});
-				row.add(walletName);
-				walletAddressLab = Ti.UI.createLabel({
-					text : an_address,
-					font : {
-						fontFamily : 'HelveticaNeue-Light',
-						fontSize : 10,
-						fontWeight : 'normal'
-					},
-					color : 'black',
-					width : 'auto',
-					height : 'auto',
-					top : 40,
-					left : 10
-				});
-				row.add(walletAddressLab);
-				var select_button = Ti.UI.createButton({
-					id:counter,
-					backgroundColor : "transparent",
-						width : '100%',
-						height : 40
-				});
-				select_button.right = 20;
-				row.add(select_button);
-				
-				select_button.addEventListener('click', function(e) {
-					var valObject = walletsArray[e.source.id];
-					if( _requires['cache'].data.address !== valObject.address ){
-						walletButton.wallet_button.text = getTagForAddress(valObject.address);
-						home_title_center.text = getTagForAddress(valObject.address);
-						_requires['cache'].data.address = valObject.address;
-						Ti.App.Properties.setString("current_address", valObject.address);
-						globals.requires['bitcore'].changeHD(e.source.id);
-						
-						wallet_address.text = valObject.address;
-						loadHistory(true);
-						globals.loadBalance(true);
-						setImageQR();
-					}
-					walletViewOpen = false;
-					wallet_view.animate(closeWalletAnimation);
-					wallet_arrow.animate(rightArrowAnimation);
-				});
-				
-				var rename_button = Ti.UI.createButton({
-					id:counter,
-					backgroundColor : "gray",
-					title : L('title_rename'),
-					color : 'white',
-					width : 60,
-					height : 25,
-					textAlign : Ti.UI.TEXT_ALIGNMENT_CENTER,
-					font : {
-						fontFamily : 'HelveticaNeue',
-						fontSize : 10,
-						fontWeight : 'light'
-					},
-				});
-				rename_button.left = 10;
-				rename_button.bottom = 5;
-				row.add(rename_button);
-				
-				rename_button.addEventListener('click', function(e) {
-					var valObject = walletsArray[e.source.id];
-					var dialog = _requires['util'].createInputDialog({
-						title : L('label_rename'),
-						message : L('text_wallet_rename'),
-						value : '',
-						buttonNames : [L('label_close'), L('label_ok')]
-					});
-					
-					dialog.origin.addEventListener('click', function(e) {
-						var inputText = (OS_ANDROID) ? dialog.androidField.getValue() : e.text;
-						if (e.index != e.source.cancel) {
-							if (inputText.length > 0) {
-								
-								var loading = _requires['util'].showLoading(theWindow, {
-									width : Ti.UI.FILL,
-									height : Ti.UI.FILL
-								});
-	
-								_requires['network'].connectPUTv2({
-									'method' : 'tags/'+ valObject.id,
-									'post' : {
-										user_id : _requires['cache'].data.id,
-										address : valObject.address,
-										tag : inputText
-									},
-									'callback' : function(result) {
-										getWallets(false);
-										if(wallet_address.text == valObject.address){
-											walletButton.wallet_button.text = inputText;
-											home_title_center.text = inputText;
-										}
-										Ti.App.Properties.setString(valObject.address, inputText);
-									},
-									'onError' : function(error) {
-										Ti.API.log('error tags' + error);
-									},
-									'always' : function() {
-										if( loading != null ) loading.removeSelf();
-									}
-								});
-	
-							}
-						}
-					});
-					dialog.origin.show();
-				});
-				
-				var hide_button = Ti.UI.createButton({
-					id:counter,
-					backgroundColor : "gray",
-					title : L('label_hide'),
-					color : 'white',
-					width : 60,
-					height : 25,
-					textAlign : Ti.UI.TEXT_ALIGNMENT_CENTER,
-					font : {
-						fontFamily : 'HelveticaNeue',
-						fontSize : 10,
-						fontWeight : 'light'
-					},
-				});
-				hide_button.left = 80;
-				hide_button.bottom = 5;
-				
-				if(val.address !== defaultAddress && counter == globals.address_num - 1){
-					row.add(hide_button);
-				}
-				
-				hide_button.addEventListener('click', function(e) {
-					var valObject = walletsArray[e.source.id];
-					var dialog = _requires['util'].createDialog({
-						title : L('label_hide'),
-						message : L('label_hide_text'),
-						buttonNames : [L('label_close'), L('label_ok')]
-					});
-					dialog.addEventListener('click', function(e) {
-						if (e.index != e.source.cancel) {
-							var loading = _requires['util'].showLoading(theWindow, {
-								width : Ti.UI.FILL,
-								height : Ti.UI.FILL
-							});
-
-							_requires['network'].connectDELETEv2({
-								'method' : 'tags/'+ valObject.id,
-								'post' : {},
-								'callback' : function(result) {
-									_requires['network'].connectPUTv2({
-										'method' : 'users/' + _requires['cache'].data.id + '/preference/update',
-										'post' : {
-											num_addresses_used : walletsArray.length - 1
-										},
-										'callback' : function() {
-											if(valObject.address === wallet_address.text){
-												walletButton.wallet_button.text = getTagForAddress(defaultAdd);
-												home_title_center.text = getTagForAddress(defaultAdd);
-												Ti.App.Properties.setString("current_address", defaultAdd);
-												wallet_address.text = defaultAdd;
-												globals.loadBalance(true);
-												setImageQR();
-											}
-											getWallets(false);
-										},
-										'onError' : function(error) {
-											// Failed or Cancel
-											//globals.requires['bitcore'].changeHD(num_hd_address - 1);
-										},
-										'always' : function() {
-											if( loading != null ) loading.removeSelf();
-										}
-									});
-								},
-								'onError' : function(error) {
-									Ti.API.log('error remove' + error);
-								},
-								'always' : function() {
-									if( loading != null ) loading.removeSelf();
-								}
-							});
-						}
-					});
-					dialog.show();
-				});
-				counter++;
-	
+				row.add(label);
 				return row;
-	
-			});
-	
-		}
-	
-		var rightArrowTransformation = Ti.UI.create2DMatrix();
-	
-	    rightArrowTransformation = rightArrowTransformation.rotate(0); // this does not work
-	    var rightArrowAnimation = Ti.UI.createAnimation({
-	      transform : rightArrowTransformation,
-	      duration: 200
-	 	});
-	 	
-	 	var downArrowTransformation = Ti.UI.create2DMatrix();
-	    downArrowTransformation = downArrowTransformation.rotate(90); // this does not work
-	    var downArrowAnimation = Ti.UI.createAnimation({
-	    	transform : downArrowTransformation,
-	    	duration: 200
-	 	});
-		
-		function addCurrencies() {
-			var tikers = globals.tiker;
-			currenciesArray = [];
-			currencies.setRowDesign(tikers, function(row, val) {//why is key visible here?
-				if (key !== 'XCP') {
-					currenciesArray.push(key);
-					var label = Ti.UI.createLabel({
-						text : key,
-						font : {
-							fontFamily : 'HelveticaNeue-Light',
-							fontSize : 20,
-							fontWeight : 'normal'
-						},
-						color : 'black',
-						width : 'auto',
-						height : 'auto',
-						left : 10
-					});
-					row.add(label);
-					return row;
-				}
-			});
-		};
-	
-		var slide_in;
-		var slide_out;
-		var slide_in_fee;
-	
-		if (OS_ANDROID) {
-			slide_in = Ti.UI.createAnimation({
-				top : display_height - 400,
-				duration : 200
-			});
-			slide_out = Ti.UI.createAnimation({
-				top : display_height,
-				duration : 200
-			});
-			slide_in_fee = Ti.UI.createAnimation({top: display_height - 250, duration:200});
-		} else {
-			slide_in_fee = Ti.UI.createAnimation({bottom: 0, duration:200});
-			slide_in = Ti.UI.createAnimation({
-				bottom : 0,
-				duration : 200
-			});
-			slide_out = Ti.UI.createAnimation({
-				bottom : -390,
-				duration : 200
-			});
-		}
-	
-		var close = _requires['util'].makeLabel({
-			text : 'close',
-			color : 'white',
-			font : {
-				fontFamily : 'Helvetica Neue',
-				fontSize : 15,
-				fontWeight : 'bold'
-			},
-			height : 30,
-			right : 10
+			}
 		});
-		var picker_toolbar = Ti.UI.createView({
-			width : '100%',
-			height : (OS_ANDROID) ? 50 : 40,
-			backgroundColor : '#e54353'
+	};
+
+	var slide_in;
+	var slide_out;
+	var slide_in_fee;
+
+	if (OS_ANDROID) {
+		slide_in = Ti.UI.createAnimation({
+			top : display_height - 400,
+			duration : 200
 		});
-		picker_toolbar.add(close);
+		slide_out = Ti.UI.createAnimation({
+			top : display_height,
+			duration : 200
+		});
+		slide_in_fee = Ti.UI.createAnimation({top: display_height - 250, duration:200});
+	} else {
+		slide_in_fee = Ti.UI.createAnimation({bottom: 0, duration:200});
+		slide_in = Ti.UI.createAnimation({
+			bottom : 0,
+			duration : 200
+		});
+		slide_out = Ti.UI.createAnimation({
+			bottom : -390,
+			duration : 200
+		});
+	}
+
+	var close = _requires['util'].makeLabel({
+		text : 'close',
+		color : 'white',
+		font : {
+			fontFamily : 'Helvetica Neue',
+			fontSize : 15,
+			fontWeight : 'bold'
+		},
+		height : 30,
+		right : 10
+	});
+	var picker_toolbar = Ti.UI.createView({
+		width : '100%',
+		height : (OS_ANDROID) ? 50 : 40,
+		backgroundColor : '#e54353'
+	});
+	picker_toolbar.add(close);
 	
-		var close_fee = _requires['util'].makeLabel({
+	var close_fee = _requires['util'].makeLabel({
 		text : 'close',
 		color : 'white',
 		font : {
@@ -449,91 +453,91 @@ exports.run = function() {
 	
 	var highBox = _requires['util'].group({
 		"title":Ti.UI.createLabel({
-					text : L('title_settings_high_fee'),
-					font : {
-						fontFamily : 'HelveticaNeue-Light',
-						fontSize : 20,
-						fontWeight : 'normal'
-					},
-					color : 'black',
-					width : 'auto',
-					height : 'auto',
-					left :0,
-					textAlign: 'left',
-				}),
-				"subtitle":Ti.UI.createLabel({
-					text : L('subtitle_settings_high_fee'),
-					font : {
-						fontFamily : 'HelveticaNeue-Light',
-						fontSize : 10,
-						fontWeight : 'normal'
-					},
-					color : 'black',
-					width : 'auto',
-					height : 'auto',
-					left :0,
-					textAlign: 'left',
-				}),
+			text : L('title_settings_high_fee'),
+			font : {
+				fontFamily : 'HelveticaNeue-Light',
+				fontSize : 20,
+				fontWeight : 'normal'
+			},
+			color : 'black',
+			width : 'auto',
+			height : 'auto',
+			left :0,
+			textAlign: 'left',
+		}),
+		"subtitle":Ti.UI.createLabel({
+			text : L('subtitle_settings_high_fee'),
+			font : {
+				fontFamily : 'HelveticaNeue-Light',
+				fontSize : 10,
+				fontWeight : 'normal'
+			},
+			color : 'black',
+			width : 'auto',
+			height : 'auto',
+			left :0,
+			textAlign: 'left',
+		}),
 		
 	}, 'vertical');
 	
 	var medBox = _requires['util'].group({
 		"title":Ti.UI.createLabel({
-					text : L('title_settings_med_fee'),
-					font : {
-						fontFamily : 'HelveticaNeue-Light',
-						fontSize : 20,
-						fontWeight : 'normal'
-					},
-					color : 'black',
-					width : 'auto',
-					height : 'auto',
-					left :0,
-					textAlign: 'left',
-				}),
-				"subtitle":Ti.UI.createLabel({
-					text : L('subtitle_settings_med_fee'),
-					font : {
-						fontFamily : 'HelveticaNeue-Light',
-						fontSize : 10,
-						fontWeight : 'normal'
-					},
-					color : 'black',
-					width : 'auto',
-					height : 'auto',
-					left :0,
-					textAlign: 'left',
-				}),
+			text : L('title_settings_med_fee'),
+			font : {
+				fontFamily : 'HelveticaNeue-Light',
+				fontSize : 20,
+				fontWeight : 'normal'
+			},
+			color : 'black',
+			width : 'auto',
+			height : 'auto',
+			left :0,
+			textAlign: 'left',
+		}),
+		"subtitle":Ti.UI.createLabel({
+			text : L('subtitle_settings_med_fee'),
+			font : {
+				fontFamily : 'HelveticaNeue-Light',
+				fontSize : 10,
+				fontWeight : 'normal'
+			},
+			color : 'black',
+			width : 'auto',
+			height : 'auto',
+			left :0,
+			textAlign: 'left',
+		}),
 		
 	}, 'vertical');
 	
 	var lowBox = _requires['util'].group({
 		"title":Ti.UI.createLabel({
-					text : L('title_settings_low_fee'),
-					font : {
-						fontFamily : 'HelveticaNeue-Light',
-						fontSize : 20,
-						fontWeight : 'normal'
-					},
-					color : 'black',
-					width : 'auto',
-					height : 'auto',
-					left :0,
-					textAlign: 'left',
-				}),
-				"subtitle":Ti.UI.createLabel({
-					text : L('subtitle_settings_low_fee'),
-					font : {
-						fontFamily : 'HelveticaNeue-Light',
-						fontSize : 10,
-						fontWeight : 'normal'
-					},
-					textAlign: 'left',
-					color : 'black',
-					width : 'auto',
-					height : 'auto',
-					left :0
-				}),
+			text : L('title_settings_low_fee'),
+			font : {
+				fontFamily : 'HelveticaNeue-Light',
+				fontSize : 20,
+				fontWeight : 'normal'
+			},
+			color : 'black',
+			width : 'auto',
+			height : 'auto',
+			left :0,
+			textAlign: 'left',
+		}),
+		"subtitle":Ti.UI.createLabel({
+			text : L('subtitle_settings_low_fee'),
+			font : {
+				fontFamily : 'HelveticaNeue-Light',
+				fontSize : 10,
+				fontWeight : 'normal'
+			},
+			textAlign: 'left',
+			color : 'black',
+			width : 'auto',
+			height : 'auto',
+			left :0
+		}),
 		
 	}, 'vertical');
 	
@@ -578,366 +582,359 @@ exports.run = function() {
 	if(OS_ANDROID) picker_fee.top = display_height;
 	else picker_fee.bottom = -250;
 	
-	
-	
-		_requires['acs'].login({
-			id : _requires['cache'].data.id,
-			password : _requires['cache'].data.password
-		});
-	
-		_requires['network'].connectGETv2({
-			'method' : 'users/' + _requires['cache'].data.id + '/username',
-			'callback' : function(result) {
-				globals.user_name = result.username;
-			},
-			'onError' : function(error) {
-				globals.user_name = '';
-			}
-		});
-		
-		var home_title_center = _requires['util'].makeLabel({
-			text : L('label_tab_home'),
-			color : "white",
-			font : {
-				fontSize : 20,
-				fontWeight : 'normal'
-			},
-			textAlign : 'center',
-			top : 28,
-			center : 0
-		});
-		
-		home_title_center.text = getTagForAddress(_requires['cache'].data.address);
-						
-		
-		top_bar.add(home_title_center);
-		if (OS_ANDROID) {
-			home_title_center.top = 20;
+	_requires['acs'].login();
+	_requires['network'].connectGETv2({
+		'method' : 'users/' + _requires['cache'].data.id + '/username',
+		'callback' : function(result) {
+			globals.user_name = result.username;
+		},
+		'onError' : function(error) {
+			globals.user_name = '';
 		}
+	});
 	
-		var menu_view_back = Ti.UI.createView({
-			backgroundColor : '#66000000',
-			width : Ti.UI.FILL,
-			height : Ti.UI.FILL,
-			opacity : 1
-		});
-		var menu_view = Ti.UI.createView({
-			backgroundColor : '#ebebeb',
-			width : 280,
-			height : Ti.UI.FILL,
-			opacity : 1
-		});
-		var menu_left = Ti.UI.createView({
-			backgroundColor : 'transparent',
-			width : Ti.UI.FILL,
-			height : Ti.UI.FILL,
-			opacity : 1
-		});
-		var wallet_view = Ti.UI.createView({
-			backgroundColor : 'transparent',
-			width : 280,
-			height : display_height - 141,
-			opacity : 1
-		});
+	var home_title_center = _requires['util'].makeLabel({
+		text : L('label_tab_home'),
+		color : "white",
+		font : {
+			fontSize : 20,
+			fontWeight : 'normal'
+		},
+		textAlign : 'center',
+		top : 28,
+		center : 0
+	});
 	
-		wallet_view.top = display_height * -1;
+	home_title_center.text = getTagForAddress(_requires['cache'].data.address);
+					
 	
+	top_bar.add(home_title_center);
+	if (OS_ANDROID) {
+		home_title_center.top = 20;
+	}
+
+	var menu_view_back = Ti.UI.createView({
+		backgroundColor : '#66000000',
+		width : Ti.UI.FILL,
+		height : Ti.UI.FILL,
+		opacity : 1
+	});
+	var menu_view = Ti.UI.createView({
+		backgroundColor : '#ebebeb',
+		width : 280,
+		height : Ti.UI.FILL,
+		opacity : 1
+	});
+	var menu_left = Ti.UI.createView({
+		backgroundColor : 'transparent',
+		width : Ti.UI.FILL,
+		height : Ti.UI.FILL,
+		opacity : 1
+	});
+	var wallet_view = Ti.UI.createView({
+		backgroundColor : 'transparent',
+		width : 280,
+		height : display_height - 141,
+		opacity : 1
+	});
+	wallet_view.top = display_height * -1;
 	
+	var balance_view = Ti.UI.createScrollView({
+		scrollType : 'vertical',
+		layout : 'vertical',
+		width : Ti.UI.FILL,
+		height : display_height - 110,
+		backgroundColor : 'white',
+		showVerticalScrollIndicator : true
+	});
+	balance_view.top = 60;
+	var shadow = Ti.UI.createView({
+		width : Ti.UI.FILL,
+		opacity : 0.1,
+		backgroundColor : 'black'
+	});
+	shadow.left = -2;
+	menu_view.right = menu_view.width;
+	menu_left.addEventListener('click', function(e) {
+		closeMenu();
+	});
+	menu_left.right = 280;
+	menu_view_back.add(menu_left);
+	var menu_top_box = Ti.UI.createView({
+		backgroundColor : 'white',
+		width : 280,
+		height : 141,
+		opacity : 1
+	});
+	menu_top_box.top = 0;
 	
-		var balance_view = Ti.UI.createScrollView({
-			scrollType : 'vertical',
-			layout : 'vertical',
-			width : Ti.UI.FILL,
-			height : display_height - 110,
-			backgroundColor : 'white',
-			showVerticalScrollIndicator : true
-		});
-		balance_view.top = 60;
-		var shadow = Ti.UI.createView({
-			width : Ti.UI.FILL,
-			opacity : 0.1,
-			backgroundColor : 'black'
-		});
-		shadow.left = -2;
-		menu_view.right = menu_view.width;
-		menu_left.addEventListener('click', function(e) {
-			closeMenu();
+	var wallets = _requires['util'].createTableList({
+		backgroundColor : 'white',
+		width : '100%',
+		height : display_height - menu_top_box.height - 40,
+		top : 0,
+		rowHeight : 90,
+		allowsSelection: false
+	});
 	
-		});
-		menu_left.right = 280;
-		menu_view_back.add(menu_left);
-		var menu_top_box = Ti.UI.createView({
-			backgroundColor : 'white',
-			width : 280,
-			height : 141,
-			opacity : 1
-		});
-		menu_top_box.top = 0;
-		
-		var wallets = _requires['util'].createTableList({
-			backgroundColor : 'white',
-			width : '100%',
-			height : display_height - menu_top_box.height - 40,
-			top : 0,
-			rowHeight : 90,
-			allowsSelection: false
-		});
-		
-		wallet_view.add(wallets);
-		function getUsername(){
-			if(globals.user_name != null && globals.user_name != ''){
-				return globals.user_name;
-			}
-			else{
-				return L('text_noregisted');
-			}
-			
+	wallet_view.add(wallets);
+	function getUsername(){
+		if(globals.user_name != null && globals.user_name != ''){
+			return globals.user_name;
 		}
-		var username = Ti.UI.createButton({
-			backgroundColor : "transparent",
-			title :getUsername(),
+		else{
+			return L('text_noregisted');
+		}
+	}
+	var username = Ti.UI.createButton({
+		backgroundColor : "transparent",
+		title :getUsername(),
+		color : 'black',
+		textAlign : Ti.UI.TEXT_ALIGNMENT_LEFT,
+		left : 10,
+		top : 15,
+		font : {
+			fontFamily : 'HelveticaNeue-Light',
+			fontSize : 20,
+			fontWeight : 'normal'
+		},
+	});
+	var info = globals.datas;
+	username.addEventListener('click', function() {
+		var dialog = _requires['util'].createInputDialog({
+			title : L('label_rename'),
+			message : L('text_rename'),
+			value : (username.title != null ) ? username.title : '',
+			buttonNames : [L('label_close'), L('label_ok')]
+		});
+		dialog.origin.addEventListener('click', function(e) {
+			var inputText = (OS_ANDROID) ? dialog.androidField.getValue() : e.text;
+			if (e.index != e.source.cancel) {
+				if (inputText.length > 0 && inputText !== info.user_name) {
+					_requires['auth'].check({
+						title : L('text_confirmsend'),
+						callback : function(e) {
+							if (e.success) {
+								var loading = _requires['util'].showLoading(theWindow, {
+									width : Ti.UI.FILL,
+									height : Ti.UI.FILL
+								});
+								_requires['network'].connectPUTv2({
+									'method' : 'users/' + _requires['cache'].data.id + '/info/update',
+									'post' : {
+										updates : JSON.stringify([{
+											column : 'username',
+											value : inputText
+										}])
+									},
+									'callback' : function(result) {
+										username.title = globals.user_name = inputText;
+									},
+									'onError' : function(error) {
+										var dialog = _requires['util'].createDialog({
+											'title': error.type,
+											'message': error.message,
+											'buttonNames': [L('label_close')]
+										}).show();
+									},
+									'always' : function() {
+										if( loading != null ) loading.removeSelf();
+									}
+								});
+							}
+						}
+					});
+				}
+			}
+		});
+		dialog.origin.show();
+	});
+
+	username.setTextAlign(Ti.UI.TEXT_ALIGNMENT_CENTER);
+	menu_top_box.add(username);
+
+	var border = Ti.UI.createView({
+		'width' : '100%',
+		height : 1,
+		backgroundColor : 'black',
+		top : 69,
+		opacity : 0.2
+	});
+	menu_top_box.add(border);
+
+	var walletButton = _requires['util'].group({
+		'wallet_icon' : _requires['util'].makeImage({
+			image : '/images/icon_wallet_red.png',
+			width : 30,
+			height : 28
+		}),
+		'wallet_button' : _requires['util'].makeLabel({
+			text : getTagForAddress(_requires['cache'].data.address),
 			color : 'black',
-			textAlign : Ti.UI.TEXT_ALIGNMENT_LEFT,
-			left : 10,
-			top : 15,
+			textAlign : 'left',
 			font : {
 				fontFamily : 'HelveticaNeue-Light',
-				fontSize : 20,
+				fontSize : 15,
 				fontWeight : 'normal'
-			},
-		});
-		var info = globals.datas;
-		username.addEventListener('click', function() {
+			}
+		})
+	}, 'horizontal');
+	walletButton.wallet_button.left = 10;
+	walletButton.left = 10;
+	walletButton.top = 80;
+	
+	var wallet_arrow = _requires['util'].makeImage({
+		image : '/images/img_settings_arrow.png',
+		right:10,
+		width : 15,
+		height : 20
+	});
+	
+	wallet_arrow.top = 100;
+	menu_top_box.add(wallet_arrow);
+	var wallet_address = _requires['util'].makeLabel({
+		text : _requires['cache'].data.address,
+		textAlign : 'left',
+		color : 'gray',
+		font : {
+			fontFamily : 'HelveticaNeue-Light',
+			fontSize : 10,
+			fontWeight : 'light'
+		},
+		top : 120,
+		left : 45
+	});
+	walletButton.width = '100%';
+	
+	var _walletButton = _requires['util'].group();
+	_walletButton.width = Ti.UI.FILL;
+	_walletButton.height = 70;
+	_walletButton.top = 70;
+	_walletButton.addEventListener('click', function(e) {
+		showWalletMenu();
+	});
+
+	var addWallet = Ti.UI.createButton({
+		backgroundColor : '#e54353',
+		title : L('label_add_wallet'),
+		color : 'white',
+		width : '90%',
+		height : 32,
+		font : {
+			fontFamily : 'Helvetica Neue',
+			fontSize : 15,
+			fontWeight : 'normal'
+		},
+		borderRadius : 5
+	});
+	Ti.App.Properties.setString("current_address", _requires['cache'].data.address);
+	globals.addWallet = function( callback ){
+		var time = (OS_ANDROID)? 1000: 1;
+		setTimeout(function(){
 			var dialog = _requires['util'].createInputDialog({
-				title : L('label_rename'),
-				message : L('text_rename'),
-				value : (username.title != null ) ? username.title : '',
+				title : L('label_add_wallet'),
+				message : L('text_wallet_add'),
+				value : '',
 				buttonNames : [L('label_close'), L('label_ok')]
 			});
 			dialog.origin.addEventListener('click', function(e) {
 				var inputText = (OS_ANDROID) ? dialog.androidField.getValue() : e.text;
 				if (e.index != e.source.cancel) {
-					if (inputText.length > 0 && inputText !== info.user_name) {
-						_requires['auth'].check({
-							title : L('text_confirmsend'),
-							callback : function(e) {
-								if (e.success) {
-									var loading = _requires['util'].showLoading(theWindow, {
-										width : Ti.UI.FILL,
-										height : Ti.UI.FILL
-									});
-									_requires['network'].connectPUTv2({
-										'method' : 'users/' + _requires['cache'].data.id + '/info/update',
-										'post' : {
-											updates : JSON.stringify([{
-												column : 'username',
-												value : inputText
-											}])
-										},
-										'callback' : function(result) {
-											username.title = globals.user_name = inputText;
-										},
-										'onError' : function(error) {
-											alert(error);
-										},
-										'always' : function() {
-											if( loading != null ) loading.removeSelf();
-										}
-									});
-								}
+					if (inputText.length > 0) {
+	
+						var loading = _requires['util'].showLoading(theWindow, {
+							width : Ti.UI.FILL,
+							height : Ti.UI.FILL
+						});
+	
+						_requires['network'].connectGETv2({
+							'method' : 'users/' + _requires['cache'].data.id + '/preference',
+							'callback' : function(result) {
+								// Get a new address
+								var num_hd_address =  Number(result.num_addresses_used);
+								var new_address = globals.requires['bitcore'].createHDAddress(num_hd_address);
+								
+								// Setting address label and send to the server or cancel.
+								_requires['network'].connectPOSTv2({
+									'method' : 'tags',
+									'post' : {
+										user_id : _requires['cache'].data.id,
+										address : new_address,
+										tag : inputText
+									},
+									'callback' : function(result) {
+										// Success
+										// invoke edit_preference to edit a current address number.
+										_requires['network'].connectPUTv2({
+											'method' : 'users/' + _requires['cache'].data.id + '/preference/update',
+											'post' : {
+												num_addresses_used : num_hd_address + 1
+											},
+											'callback' : function() {
+												Ti.App.Properties.setString(new_address, inputText);
+												globals.address_num = num_hd_address;
+												getWallets(false);
+												if( typeof callback === 'function' ) callback({ status: true, 'address': new_address });
+											},
+											'onError' : function(error) {
+												// Failed or Cancel
+												globals.requires['bitcore'].changeHD(num_hd_address - 1);
+												
+												if( typeof callback === 'function' ) callback({ status: false, 'action': 'error' });
+											},
+											'always' : function() {
+												if( loading != null ) loading.removeSelf();
+											}
+										});
+	
+									},
+									'onError' : function(error) {
+										if( loading != null ) loading.removeSelf();
+										// Failed or Cancel
+										globals.requires['bitcore'].changeHD(result.num_addresses_used - 1);
+										
+										if( typeof callback === 'function' ) callback({ status: false, 'action': 'error' });
+									}
+								});
+	
 							}
 						});
+	
 					}
+				}
+				else{
+					if( typeof callback === 'function' ) callback({ status: false, 'action': 'cancel' });
 				}
 			});
 			dialog.origin.show();
-		});
-	
-		username.setTextAlign(Ti.UI.TEXT_ALIGNMENT_CENTER);
-		menu_top_box.add(username);
-	
-		var border = Ti.UI.createView({
-			'width' : '100%',
-			height : 1,
-			backgroundColor : 'black',
-			top : 69,
-			opacity : 0.2
-		});
-		menu_top_box.add(border);
-	
-		var walletButton = _requires['util'].group({
-			'wallet_icon' : _requires['util'].makeImage({
-				image : '/images/icon_wallet_red.png',
-				width : 30,
-				height : 28
-			}),
-			'wallet_button' : _requires['util'].makeLabel({
-				text : getTagForAddress(_requires['cache'].data.address),
-				color : 'black',
-				textAlign : 'left',
-				font : {
-					fontFamily : 'HelveticaNeue-Light',
-					fontSize : 15,
-					fontWeight : 'normal'
-				}
-			})
-		}, 'horizontal');
-		walletButton.wallet_button.left = 10;
-		walletButton.left = 10;
-		walletButton.top = 80;
-		
-		var wallet_arrow = _requires['util'].makeImage({
-			image : '/images/img_settings_arrow.png',
-			right:10,
-			width : 15,
-			height : 20
-		});
-		
-		wallet_arrow.top = 100;
-		menu_top_box.add(wallet_arrow);
-		var wallet_address = _requires['util'].makeLabel({
-			text : _requires['cache'].data.address,
-			textAlign : 'left',
-			color : 'gray',
-			font : {
-				fontFamily : 'HelveticaNeue-Light',
-				fontSize : 10,
-				fontWeight : 'light'
-			},
-			top : 120,
-			left : 45
-		});
-		walletButton.width = '100%';
-		
-		var _walletButton = _requires['util'].group();
-		_walletButton.width = Ti.UI.FILL;
-		_walletButton.height = 70;
-		_walletButton.top = 70;
-		_walletButton.addEventListener('click', function(e) {
-			showWalletMenu();
-		});
-	
-		var addWallet = Ti.UI.createButton({
-			backgroundColor : '#e54353',
-			title : L('label_add_wallet'),
-			color : 'white',
-			width : '90%',
-			height : 32,
-			font : {
-				fontFamily : 'Helvetica Neue',
-				fontSize : 15,
-				fontWeight : 'normal'
-			},
-			borderRadius : 5
-		});
-		Ti.App.Properties.setString("current_address", _requires['cache'].data.address);
-		globals.addWallet = function( callback ){
-			var time = (OS_ANDROID)? 1000: 1;
-			setTimeout(function(){
-				var dialog = _requires['util'].createInputDialog({
-					title : L('label_add_wallet'),
-					message : L('text_wallet_add'),
-					value : '',
-					buttonNames : [L('label_close'), L('label_ok')]
-				});
-				dialog.origin.addEventListener('click', function(e) {
-					var inputText = (OS_ANDROID) ? dialog.androidField.getValue() : e.text;
-					if (e.index != e.source.cancel) {
-						if (inputText.length > 0) {
-		
-							var loading = _requires['util'].showLoading(theWindow, {
-								width : Ti.UI.FILL,
-								height : Ti.UI.FILL
-							});
-		
-							_requires['network'].connectGETv2({
-								'method' : 'users/' + _requires['cache'].data.id + '/preference',
-								'callback' : function(result) {
-									// Get a new address
-									var num_hd_address =  Number(result.num_addresses_used);
-									var new_address = globals.requires['bitcore'].createHDAddress(num_hd_address);
-									
-									// Setting address label and send to the server or cancel.
-									_requires['network'].connectPOSTv2({
-										'method' : 'tags',
-										'post' : {
-											user_id : _requires['cache'].data.id,
-											address : new_address,
-											tag : inputText
-										},
-										'callback' : function(result) {
-											// Success
-											// invoke edit_preference to edit a current address number.
-											_requires['network'].connectPUTv2({
-												'method' : 'users/' + _requires['cache'].data.id + '/preference/update',
-												'post' : {
-													num_addresses_used : num_hd_address + 1
-												},
-												'callback' : function() {
-													Ti.App.Properties.setString(new_address, inputText);
-													globals.address_num = num_hd_address;
-													getWallets(false);
-													if( typeof callback === 'function' ) callback({ status: true, 'address': new_address });
-												},
-												'onError' : function(error) {
-													// Failed or Cancel
-													globals.requires['bitcore'].changeHD(num_hd_address - 1);
-													
-													if( typeof callback === 'function' ) callback({ status: false, 'action': 'error' });
-												},
-												'always' : function() {
-													if( loading != null ) loading.removeSelf();
-												}
-											});
-		
-										},
-										'onError' : function(error) {
-											if( loading != null ) loading.removeSelf();
-											// Failed or Cancel
-											globals.requires['bitcore'].changeHD(result.num_addresses_used - 1);
-											
-											if( typeof callback === 'function' ) callback({ status: false, 'action': 'error' });
-										}
-									});
-		
-								}
-							});
-		
-						}
-					}
-					else{
-						if( typeof callback === 'function' ) callback({ status: false, 'action': 'cancel' });
-					}
-				});
-				dialog.origin.show();
-			}, time);
-		};
-		addWallet.addEventListener('click', function() {
-			globals.addWallet();
-		});
-		wallet_view.add(addWallet);
-	
-		menu_top_box.add(walletButton);
-		menu_top_box.add(wallet_address);
-		menu_top_box.add(_walletButton);
-	
-		var border2 = Ti.UI.createView({
-			'width' : '100%',
-			height : 1,
-			backgroundColor : 'black',
-			top : 140,
-			opacity : 0.2
-		});
-		menu_top_box.add(border2);
-		function getTagForAddress(address){
-			var tag =  Ti.App.Properties.getString(address);
-			if(tag != null && tag != 'NULL' ){
-				return tag;
-			}else{
-				return L('label_no_tag');
-			}
-			
+		}, time);
+	};
+	addWallet.addEventListener('click', function() {
+		globals.addWallet();
+	});
+	wallet_view.add(addWallet);
+
+	menu_top_box.add(walletButton);
+	menu_top_box.add(wallet_address);
+	menu_top_box.add(_walletButton);
+
+	var border2 = Ti.UI.createView({
+		'width' : '100%',
+		height : 1,
+		backgroundColor : 'black',
+		top : 140,
+		opacity : 0.2
+	});
+	menu_top_box.add(border2);
+	function getTagForAddress(address){
+		var tag =  Ti.App.Properties.getString(address);
+		if(tag != null && tag != 'NULL' ){
+			return tag;
+		}else{
+			return L('label_no_tag');
 		}
+		
+	}
 		
 	var current_fee = _requires['cache'].data.current_fee;
 	globals.fee_text = {
@@ -1095,9 +1092,7 @@ exports.run = function() {
 		indieBoardButton.top = 250;
 	
 		indieBoardButton.addEventListener('click', function(e) {
-	
 			Ti.Platform.openURL('https://indiesquare.me');
-	
 		});
 		//menu_view.add(indieBoardButton);
 		
@@ -1129,9 +1124,7 @@ exports.run = function() {
 					globals._parseArguments(str, true);
 				}
 			});
-	
 			closeMenu();
-	
 		});
 	
 		menu_view.add(linkageButton);
@@ -1145,55 +1138,44 @@ exports.run = function() {
 	  		showPagingControl:false
 		});
 		function setPage(){
-			 if(middle_view_scroll.currentPage == 0){
-	   	 	homeTab.button.image = '/images/icon_home_active.png';
-			exchangeTab.button.image = '/images/icon_exchange.png';
-			historyTab.button.image = '/images/icon_history.png';
-			receiveTab.button.image = '/images/icon_receive.png';
-	
-			homeTab.label.color = '#e54353';
-			exchangeTab.label.color = '#929292';
-			historyTab.label.color = '#929292';
-			receiveTab.label.color = '#929292';
-	    	
+			if(middle_view_scroll.currentPage == 0){
+		   	 	homeTab.button.image = '/images/icon_home_active.png';
+				exchangeTab.button.image = '/images/icon_exchange.png';
+				historyTab.button.image = '/images/icon_history.png';
+				receiveTab.button.image = '/images/icon_receive.png';
+		
+				homeTab.label.color = '#e54353';
+				exchangeTab.label.color = '#929292';
+				historyTab.label.color = '#929292';
+				receiveTab.label.color = '#929292';
 	    	}
 	    	else if(middle_view_scroll.currentPage == 1){
 	    		//setImageQR();
-			
-			
-			
-			homeTab.button.image = '/images/icon_home.png';
-			exchangeTab.button.image = '/images/icon_exchange.png';
-			historyTab.button.image = '/images/icon_history.png';
-			receiveTab.button.image = '/images/icon_receive_active.png';
-	
-			homeTab.label.color = '#929292';
-			exchangeTab.label.color = '#929292';
-			historyTab.label.color = '#929292';
-			receiveTab.label.color = '#e54353';
+				homeTab.button.image = '/images/icon_home.png';
+				exchangeTab.button.image = '/images/icon_exchange.png';
+				historyTab.button.image = '/images/icon_history.png';
+				receiveTab.button.image = '/images/icon_receive_active.png';
+		
+				homeTab.label.color = '#929292';
+				exchangeTab.label.color = '#929292';
+				historyTab.label.color = '#929292';
+				receiveTab.label.color = '#e54353';
 	    	}
 	    	else if(middle_view_scroll.currentPage == 2){
-	    		
-	    		
-			
-			homeTab.button.image = '/images/icon_home.png';
-			exchangeTab.button.image = '/images/icon_exchange_active.png';
-			historyTab.button.image = '/images/icon_history.png';
-			receiveTab.button.image = '/images/icon_receive.png';
-	
-			homeTab.label.color = '#929292';
-			exchangeTab.label.color = '#e54353';
-			historyTab.label.color = '#929292';
-			receiveTab.label.color = '#929292';
-			
-			startDex();
-	
-	    		
+	    		homeTab.button.image = '/images/icon_home.png';
+				exchangeTab.button.image = '/images/icon_exchange_active.png';
+				historyTab.button.image = '/images/icon_history.png';
+				receiveTab.button.image = '/images/icon_receive.png';
+		
+				homeTab.label.color = '#929292';
+				exchangeTab.label.color = '#e54353';
+				historyTab.label.color = '#929292';
+				receiveTab.label.color = '#929292';
+				
+				startDex();	    		
 	    	}
 	    	else if(middle_view_scroll.currentPage == 3){
-	    	
-			
-				homeTab.button.image = '/images/icon_home.png';
+	    		homeTab.button.image = '/images/icon_home.png';
 				exchangeTab.button.image = '/images/icon_exchange.png';
 				historyTab.button.image = '/images/icon_history_active.png';
 				receiveTab.button.image = '/images/icon_receive.png';
@@ -1202,11 +1184,12 @@ exports.run = function() {
 				exchangeTab.label.color = '#929292';
 				historyTab.label.color = '#e54353';
 				receiveTab.label.color = '#929292';
-			
-				if( !Ti.API.isHistoryloaded ) loadHistory(true);
-			
-	    	}
-			
+				
+				if( !Ti.API.isHistoryloaded ){
+					Ti.API.isHistoryloaded = true;
+					loadHistory(true);
+				}
+			}
 		}
 		middle_view_scroll.addEventListener('scrollEnd', function() {
 	    	setPage();
@@ -1226,11 +1209,7 @@ exports.run = function() {
 				}
 			}
 		});
-	
-		//scrollableView.scrollToView(view_scroll['balance']);
-	
-		//scrollView.setContentOffset({x: 0, y: 0}, { animated: false });
-	
+		
 		var fade_in = Ti.UI.createAnimation();
 		fade_in.opacity = 1;
 		fade_in.duration = 400;
@@ -1249,17 +1228,22 @@ exports.run = function() {
 		}
 	
 		var assets_info = [];
+		
+		_requires['tiker'].getTiker({
+			'callback' : function() {
+			}
+		});
 	
 		var balance_error = null;
 		globals.loadBalance = function(bool, l) {
 			var loading = l;
-			if (bool)
-				loading = _requires['util'].showLoading(view, {
+			if (bool){
+				loading = _requires['util'].showLoading(home_view, {
 					width : Ti.UI.FILL,
 					height : Ti.UI.FILL,
 					message : L('label_load_tokens')
 				});
-				
+			}
 			_requires['network'].connectGETv2({
 				'method' : 'addresses/' + _requires['cache'].data.address + '/balances',
 				'callback' : function(result) {
@@ -1270,39 +1254,8 @@ exports.run = function() {
 					globals.balances = result;
 					
 					if( globals.dex_init != null ) globals.dex_init();
-					_requires['tiker'].getTiker({
-						'callback' : function() {
-							for (var key in assets_info) {
-								if (assets_info.hasOwnProperty(key)) {
-									var asset_object = assets_info[key];
-									if (key === 'BTC' || key === 'XCP') {
-										if (key === 'XCP' && !isFinite(asset_object.balance))
-											globals.reorg_occured();
-										asset_object.fiat_balance.text = _requires['tiker'].to(key, asset_object.balance, _requires['cache'].data.currncy);
-									} else {
-										(function(key) {
-											_requires['network'].connectGETv2({
-												'method' : 'market/' + key + '/price',
-												'callback' : function(result) {
-													var the_asset_object = assets_info[key];
-													if (result.BTC.price > 0) {
-														var xcpval = result.BTC.price * the_asset_object.balance;
-														the_asset_object.fiat_balance.text = _requires['tiker'].to('XCP', xcpval, _requires['cache'].data.currncy, 4);
-													} else {
-														the_asset_object.fiat_balance.text = '-';
-													}
-												}
-											});
-										})(key);
-									}
-								}
-							}
-						}
-					});
 					home_title_center.opacity = 1;
-	
 					balance_view.removeAllChildren();
-	
 					for (var i = 0; i < result.length; i++) {
 						var val = result[i];
 						
@@ -1331,28 +1284,6 @@ exports.run = function() {
 						});
 						asset_name.asset = val.token;
 						box.add(asset_name);
-						
-						val.description = Alloy.CFG.res_uri + 'json/' + val.token + '.json';
-						_requires['util'].putTokenIcon({
-							info : val,
-							parent : box,
-							width : 48,
-							height : 48,
-							top : 7,
-							left : 7
-						});
-						
-						/*
-						if( val.token === 'BTC' ) image = '/images/asset_bitcoin.png';
-						else if( val.token === 'XCP' ) image = '/images/asset_xcp.png';
-						else image = Alloy.CFG.api_uri + '/v2/tokens/'+val.token+'/image';
-						var token_image = Ti.UI.createImageView({
-							image: image,
-							width: 48, height: 48,
-							top: 7, left: 7
-						});
-						box.add(token_image);
-						*/
 						
 						var item_name = asset_name.text;
 						var balanceString = val.balance.toString();
@@ -1477,14 +1408,53 @@ exports.run = function() {
 						});
 						if( val.token === 'BTC' ) box.add(asset_array.fiat_balance);
 						assets_info[val.token] = asset_array;
-	
+						
+						(function(val, assets_info, box) {
+							var timer = setInterval(function() {
+								if( globals.tiker ){
+									clearInterval(timer);
+									var key = val.token;
+									if (assets_info.hasOwnProperty(key)) {
+										var asset_object = assets_info[key];
+										if (key === 'BTC' || key === 'XCP') {
+											if (key === 'XCP' && !isFinite(asset_object.balance)) globals.reorg_occured();
+											asset_object.fiat_balance.text = _requires['tiker'].to(key, asset_object.balance, _requires['cache'].data.currncy);
+										} else {
+											_requires['network'].connectGETv2({
+												'method' : 'market/' + key + '/price',
+												'callback' : function(result) {
+													var the_asset_object = assets_info[key];
+													if (result.BTC.price > 0) {
+														var xcpval = result.BTC.price * the_asset_object.balance;
+														the_asset_object.fiat_balance.text = _requires['tiker'].to('XCP', xcpval, _requires['cache'].data.currncy, 4);
+													} else {
+														the_asset_object.fiat_balance.text = '-';
+													}
+												}
+											});
+										}
+									}
+								}
+							}, 500);
+						})(val, assets_info, box);
+						
+						if( val.token === 'BTC' ) image = '/images/asset_bitcoin.png';
+						else if( val.token === 'XCP' ) image = '/images/asset_xcp.png';
+						else image = 'https://api.indiesquare.me/v2/tokens/'+val.token+'/image';
+						var token_image = Ti.UI.createImageView({
+							image: image,
+							width: 48, height: 48,
+							top: 7, left: 7
+						});
+						box.add(token_image);
+						
 						info_button.is = true;
 						(function(info_button) {
 							info_button.addEventListener('touchend', function(e) {
 								if (info_button.is) {
 									info_button.is = false;
-									var asset = info_button.parent.children[0].asset;
-									if (asset !== 'BTC') {
+									var token = info_button.parent.children[0].asset;
+									if (token !== 'BTC') {
 										info_button.opacity = 0.1;
 										info_button.animate({
 											opacity : 1.0,
@@ -1492,7 +1462,7 @@ exports.run = function() {
 										}, function() {
 											if (!globals.is_scrolling)
 												_windows['assetinfo'].run({
-													'asset' : asset
+													'asset' : token
 												});
 											info_button.is = true;
 										});
@@ -1502,30 +1472,31 @@ exports.run = function() {
 						})(info_button);
 	
 						send_button.is = true;
-						(function(send_button, val, fiat_balance) {
+						(function(send_button, val, asset_array) {
 							send_button.addEventListener('touchend', function(e) {
 								if (send_button.is) {
 									send_button.is = false;
 									var asset = val.token;
 									var balance = val.balance;
-									var fiat = fiat_balance.text;
+									var fiat = asset_array.fiat_balance.text;
 	
 									send_button.opacity = 0.1;
 									send_button.animate({
 										opacity : 1.0,
 										duration : 100
 									}, function() {
-										if (!globals.is_scrolling)
+										if (!globals.is_scrolling){
 											_windows['send'].run({
-												'asset' : asset,
-												'balance' : balance,
-												'fiat' : fiat
+												'asset': asset,
+												'balance': balance,
+												'asset_array': asset_array
 											});
+										}
 										send_button.is = true;
 									});
 								}
 							});
-						})(send_button, val, asset_array.fiat_balance);
+						})(send_button, val, asset_array);
 	
 						if (val.token !== 'BTC' && val.token !== 'XCP')
 							box.add(info_button);
@@ -1593,7 +1564,12 @@ exports.run = function() {
 					}
 				},
 				'onError' : function(error) {
-					alert(error);
+					var dialog = _requires['util'].createDialog({
+						'title': error.type,
+						'message': error.message,
+						'buttonNames': [L('label_close')]
+					}).show();
+					
 					if (balance_error == null) {
 						balance_error = _requires['util'].group({
 							'text' : _requires['util'].makeLabel({
@@ -1610,11 +1586,12 @@ exports.run = function() {
 						balance_error.width = '100%';
 	
 						balance_error.addEventListener('touchstart', function() {
-							middle_view.remove(balance_error);
+							home_view.remove(balance_error);
 							balance_error = null;
 							globals.loadBalance(true);
 						});
-						middle_view.add(balance_error);
+						//middle_view.add(balance_error);
+						home_view.add(balance_error);
 					}
 				},
 				'always' : function() {
@@ -1649,7 +1626,7 @@ exports.run = function() {
 				refresh_button.animate(refreshAnimate);
 				
 				setTimeout(function() { refresh_button.animate(refreshAnimate2); }, 2100);
-				loadHistory(true);
+				//loadHistory(true);
 				globals.loadBalance(true);
 			}
 		});
@@ -1784,7 +1761,6 @@ exports.run = function() {
 				image : '/images/icon_receive.png',
 				width : 30,
 				height : 30,
-	
 			}),
 			label : _requires['util'].makeLabel({
 				text : L('label_tab_receive'),
@@ -1809,7 +1785,6 @@ exports.run = function() {
 				image : '/images/icon_exchange.png',
 				width : 30,
 				height : 30,
-	
 			}),
 			label : _requires['util'].makeLabel({
 				text : L('label_tab_exchange'),
@@ -1834,7 +1809,6 @@ exports.run = function() {
 				image : '/images/icon_history.png',
 				width : 30,
 				height : 30,
-	
 			}),
 			label : _requires['util'].makeLabel({
 				text : L('label_tab_history'),
@@ -1856,36 +1830,21 @@ exports.run = function() {
 		});
 		
 		function showHome(animation){
-		
-				middle_view_scroll.setCurrentPage(0);
+			middle_view_scroll.setCurrentPage(0);
 			setPage();
-			
-			
 		}
-		
-		
 		function showReceive(animation){
-			
 			middle_view_scroll.setCurrentPage(1);
 			setPage();
-		
 		}
-		
 		function showExchange(animation){
-				middle_view_scroll.setCurrentPage(2);
-			
-				setPage();
-			
+			middle_view_scroll.setCurrentPage(2);
+			setPage();
 		}
-		
 		function showHistory(animation){
 				middle_view_scroll.setCurrentPage(3);
-				
 				setPage();
-			
 		}
-		
-		
 		var walletViewOpen = false;
 		function showWalletMenu() {
 			if (walletViewOpen == false) {
@@ -1899,10 +1858,7 @@ exports.run = function() {
 				wallet_arrow.animate(rightArrowAnimation);
 			}
 		}
-	
-	
 		tab_bar_home.add(historyTab);
-		
 		var slideViewFromRight = Ti.UI.createAnimation({
 			left : 0,
 			duration : 100
@@ -1970,14 +1926,9 @@ exports.run = function() {
 		menuTab.right = 15;
 		menuTab.addEventListener('touchstart', function(e) {
 			menu_view_back.show();
-		
 			username.title = getUsername();
-	
 			menu_view.animate(openMenuAnimation);
-	
 			menu_view_back.animate(openMenuBackAnimation);
-			
-	
 		});
 		tab_bar_home.add(menuTab);
 	
@@ -1992,11 +1943,7 @@ exports.run = function() {
 			theWindow.add(menu_view_back);
 			view.add(tab_bar_home);
 			//theWindow.add(picker1);
-			if (OS_ANDROID) {
 			Ti.include('/window/introscreens.js');
-			} else {
-			Ti.include('/window/introscreens.js');
-			}
 			
 			intro_scroll.opacity = 0;
 			theWindow.add(intro_scroll);
@@ -2008,7 +1955,6 @@ exports.run = function() {
 			});
 		}
 		else{
-			
 			view.add(middle_view);
 			theWindow.add(view);
 			theWindow.add(menu_view_back);
@@ -2019,12 +1965,8 @@ exports.run = function() {
 		setIsResumeFalse = function(){
 			isResume = false;
 		};
-		 loadHome = function(){
-		 	
-		 	
-		 	
+		loadHome = function(){
 		 	messageCount = 0;
-		 	
 		 	messageBoxViews = Ti.UI.createView({
 				width : '100%',
 				height : '100%',
@@ -2064,8 +2006,6 @@ exports.run = function() {
 			messageBox1.add(boxImage1);
 			messageBox1.add(box_label1);
 			
-			
-			
 			messageBox2 = Ti.UI.createView({
 				width : 200,
 				height : 100,
@@ -2082,17 +2022,17 @@ exports.run = function() {
 			});
 			
 			var box_label2 = _requires['util'].makeLabel({
-			text :L('label_box_2'),
-			textAlign : 'center',
-			top:10,
-			color : 'white',
-			width: '90%',
-			height: '90%',
-			font : {
-				fontFamily : 'HelveticaNeue-Light',
-				fontSize : 14,
-				fontWeight : 'light'
-			}
+				text :L('label_box_2'),
+				textAlign : 'center',
+				top:10,
+				color : 'white',
+				width: '90%',
+				height: '90%',
+				font : {
+					fontFamily : 'HelveticaNeue-Light',
+					fontSize : 14,
+					fontWeight : 'light'
+				}
 			});
 			
 			setTimeout(function() { theWindow.remove(intro_scroll);},1100);
@@ -2117,17 +2057,17 @@ exports.run = function() {
 			});
 			
 			var box_label3 = _requires['util'].makeLabel({
-			text :L('label_box_3'),
-			textAlign : 'center',
-			color : 'white',
-		    top:-10,
-			width: '90%',
-			height: '90%',
-			font : {
-				fontFamily : 'HelveticaNeue-Light',
-				fontSize : 14,
-				fontWeight : 'light'
-			}
+				text :L('label_box_3'),
+				textAlign : 'center',
+				color : 'white',
+			    top:-10,
+				width: '90%',
+				height: '90%',
+				font : {
+					fontFamily : 'HelveticaNeue-Light',
+					fontSize : 14,
+					fontWeight : 'light'
+				}
 			});
 			
 			messageBox3.add(boxImage3);
@@ -2145,11 +2085,10 @@ exports.run = function() {
 			});
 			messageBox2.addEventListener('touchstart', function(e) {
 				messageBoxViews.remove(messageBox2);
-			   setTimeout(function() {  messageBoxViews.add(messageBox3); messageCount = 2; }, 100);
+				setTimeout(function() {  messageBoxViews.add(messageBox3); messageCount = 2; }, 100);
 			});
 			messageBox3.addEventListener('touchstart', function(e) {
 				view.remove(messageBoxViews);
-				
 			});
 			messageBoxViews.addEventListener('touchstart', function(e) {
 				if(messageCount == 0){
@@ -2158,15 +2097,13 @@ exports.run = function() {
 				}
 				else if(messageCount == 1){
 					messageBoxViews.remove(messageBox2);
-					 setTimeout(function() {
-					messageCount = 2;
-					
-					messageBoxViews.add(messageBox3);
+					setTimeout(function() {
+						messageCount = 2;
+						messageBoxViews.add(messageBox3);
 					},100);
 				}
-				else{
+				else {
 					view.remove(messageBoxViews);
-					
 				}
 			});
 		};
